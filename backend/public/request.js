@@ -1,8 +1,107 @@
-const token=()=>sessionStorage.getItem('tcrAdminToken')||'';let requests=[],members=[];
-async function api(url,opts={}){opts.headers={...(opts.headers||{}),Authorization:'Bearer '+token()};if(opts.body&&typeof opts.body!=='string'){opts.headers['Content-Type']='application/json';opts.body=JSON.stringify(opts.body)}const r=await fetch(url,{...opts,credentials:'include'});if(r.status===401){sessionStorage.removeItem('tcrAdminToken');location.href='/login.html';throw new Error('Please sign in again.')}const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'Request failed');return j}
-function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function notice(msg,error=false){const n=document.querySelector('#notice');n.textContent=msg;n.className='notice '+(error?'is-error':'is-success');n.hidden=false;window.clearTimeout(notice.timer);notice.timer=setTimeout(()=>n.hidden=true,4500)}
-function render(){document.querySelector('#pendingCount').textContent=requests.filter(r=>r.status==='pending').length;document.querySelector('#approvedCount').textContent=requests.filter(r=>r.status==='approved').length;document.querySelector('#rejectedCount').textContent=requests.filter(r=>r.status==='rejected').length;const root=document.querySelector('#requestsList');if(!requests.length){root.innerHTML='<div class="panel empty">No score requests yet.</div>';return}root.innerHTML=requests.map(r=>{const proof=(r.proofs||[]).map((p,i)=>`<a href="${esc(p)}" target="_blank" rel="noopener"><img src="${esc(p)}" alt="Proof image ${i+1}" loading="lazy"></a>`).join('');const options=members.filter(m=>m.active!==false).map(m=>`<option value="${esc(m.id)}">${esc(m.name)} · ${esc(m.team)}</option>`).join('');return `<article class="request-card"><div class="request-head"><div><span class="eyebrow">SUBMITTED ${esc(new Date(r.createdAt).toLocaleString())}</span><h3>${esc(r.name)}</h3><div class="request-meta"><span>Games to add: <strong>${Number(r.games)||0}</strong></span><span>Scores to add: <strong>${Number(r.scores)||0}</strong></span></div></div><span class="state ${esc(r.status)}">${esc(r.status)}</span></div>${proof?`<div class="request-proof">${proof}</div>`:'<p class="muted">No proof pictures attached.</p>'}${r.status==='pending'?`<div class="request-actions"><label>Assign to roster member<select data-member="${esc(r.id)}"><option value="">Select member…</option>${options}</select></label><label>Review note (optional)<input data-reason="${esc(r.id)}" maxlength="300" placeholder="Reason or note"></label><button class="btn btn-primary" data-decision="approve" data-id="${esc(r.id)}">Approve & Add</button><button class="btn btn-danger" data-decision="reject" data-id="${esc(r.id)}">Reject</button></div>`:`<p class="muted">${r.status==='approved'?`Added to ${esc(r.memberName||'selected member')} on ${esc(new Date(r.reviewedAt).toLocaleString())}`:'Rejected'}${r.reviewReason?' · '+esc(r.reviewReason):''}</p>`}</article>`}).join('');root.querySelectorAll('[data-decision]').forEach(b=>b.addEventListener('click',()=>review(b.dataset.id,b.dataset.decision,b)))}
-async function review(id,decision,button){const item=requests.find(r=>r.id===id);let memberId='';if(decision==='approve'){memberId=document.querySelector(`[data-member="${CSS.escape(id)}"]`).value;if(!memberId){notice('Select the roster member before approving.',true);return}const member=members.find(m=>m.id===memberId);if(!confirm(`Approve ${item.name}'s request and add ${item.games} games + ${item.scores} scores to ${member?.name}?`))return}else if(!confirm(`Reject the score request from ${item.name}?`))return;const reason=document.querySelector(`[data-reason="${CSS.escape(id)}"]`)?.value||'';button.disabled=true;try{await api(`/api/admin/game-requests/${encodeURIComponent(id)}/review`,{method:'POST',body:{decision,memberId,reason}});notice(decision==='approve'?'Request approved and member statistics updated.':'Request rejected.');await load()}catch(e){notice(e.message,true)}finally{button.disabled=false}}
-async function load(){try{const [r,d]=await Promise.all([api('/api/admin/game-requests'),api('/api/admin/site-data')]);requests=r.requests||[];members=d.members||[];render()}catch(e){notice(e.message,true)}}
-document.querySelector('#refreshBtn').addEventListener('click',load);document.querySelector('#logoutBtn').addEventListener('click',async()=>{try{await api('/api/admin/logout',{method:'POST'})}catch{}sessionStorage.removeItem('tcrAdminToken');location.href='/login.html'});if(!token())location.href='/login.html';else load();
+// Score requests: review each one with the player already picked where the name matches.
+let requests = [];
+let members = [];
+let tab = "pending";
+
+const clean = (value) => String(value || "").toLowerCase().replace(/[^\p{L}\p{N}]/gu, "");
+
+function suggested(request) {
+  if (request.memberId) return members.find((m) => m.id === request.memberId) || null;
+  const matches = members.filter((m) => clean(m.name) === clean(request.name));
+  return matches.length === 1 ? matches[0] : null;
+}
+
+function approveLabel(request, member) {
+  const what = `${number(request.games)} ${Number(request.games) === 1 ? "game" : "games"} and ${number(request.scores)} pins`;
+  return member ? `Approve: add ${what} to ${member.name}` : "Choose a player to approve";
+}
+
+function card(r) {
+  const proofs = (r.proofs || []).map((p, i) => `<a href="${esc(p)}" target="_blank" rel="noopener"><img src="${esc(p)}" alt="Proof ${i + 1}" loading="lazy"></a>`).join("");
+  const avg = r.games ? (r.scores / r.games).toFixed(1) : "0.0";
+  const verified = r.source === "member-portal";
+  const match = suggested(r);
+  const when = new Date(r.createdAt).toLocaleString();
+  const top = `<div class="request-top">
+      <div><h2>${esc(niceName(r.name))}</h2><p class="dim small">${esc(when)} · ${verified ? "Member Portal (verified)" : "Public form (name not verified)"}</p></div>
+      <span class="pill-state ${esc(r.status)}">${r.status === "pending" ? "Waiting" : r.status === "approved" ? "Approved" : "Rejected"}</span>
+    </div>
+    <div class="figures">
+      <div><span>Games</span><b>${number(r.games)}</b></div>
+      <div><span>Total pins</span><b>${number(r.scores)}</b></div>
+      <div><span>Average</span><b>${avg}</b></div>
+    </div>
+    ${r.notes ? `<p class="gap">${esc(r.notes)}</p>` : ""}
+    ${proofs ? `<div class="proofs">${proofs}</div>` : '<p class="dim small gap">No proof photos.</p>'}`;
+  if (r.status !== "pending") {
+    return `<article class="request">${top}<p class="dim small gap">${r.status === "approved" ? `Added to ${esc(r.memberName || "the player")}` : "Rejected"}${r.reviewedAt ? ` on ${esc(new Date(r.reviewedAt).toLocaleString())}` : ""}${r.reviewReason ? ` · ${esc(r.reviewReason)}` : ""}</p></article>`;
+  }
+  const options = members.map((m) => `<option value="${esc(m.id)}" ${match?.id === m.id ? "selected" : ""}>${esc(m.name)} · ${esc(m.team)}</option>`).join("");
+  return `<article class="request is-pending" data-id="${esc(r.id)}">${top}
+    ${match ? "" : '<p class="warn">This name doesn\'t match the roster. Choose who it belongs to.</p>'}
+    <div class="review">
+      <label class="field">Add to player<select data-member><option value="">Choose a player…</option>${options}</select></label>
+      <label class="field">Note <small>Optional</small><input data-note maxlength="300" placeholder="Reason or note"></label>
+      <div class="btn-row">
+        <button type="button" class="btn btn-primary" data-approve ${match ? "" : "disabled"}>${esc(approveLabel(r, match))}</button>
+        <button type="button" class="btn btn-danger-quiet" data-reject>Reject</button>
+      </div>
+    </div></article>`;
+}
+
+function render() {
+  const count = (status) => requests.filter((r) => r.status === status).length;
+  $("#nPending").textContent = count("pending") ? `(${count("pending")})` : "";
+  $("#nApproved").textContent = count("approved") ? `(${count("approved")})` : "";
+  $("#nRejected").textContent = count("rejected") ? `(${count("rejected")})` : "";
+  const list = requests.filter((r) => r.status === tab);
+  const root = $("#requests");
+  root.innerHTML = list.length ? list.map(card).join("")
+    : `<div class="panel empty">${tab === "pending" ? "All caught up. Nothing is waiting." : "Nothing here yet."}</div>`;
+  $$("[data-id]", root).forEach((el) => {
+    const r = requests.find((x) => x.id === el.dataset.id);
+    const select = $("[data-member]", el);
+    const approve = $("[data-approve]", el);
+    select.addEventListener("change", () => {
+      const member = members.find((m) => m.id === select.value);
+      approve.disabled = !member;
+      approve.textContent = approveLabel(r, member);
+    });
+    approve.addEventListener("click", () => decide(r, "approve", el, approve));
+    $("[data-reject]", el).addEventListener("click", (event) => decide(r, "reject", el, event.currentTarget));
+  });
+}
+
+async function decide(r, decision, el, button) {
+  const memberId = $("[data-member]", el).value;
+  const reason = $("[data-note]", el).value;
+  if (decision === "reject") {
+    const yes = await confirmAction({ title: `Reject ${r.name}'s request?`, body: "Their games and pins won't be added.", confirm: "Reject request", cancel: "Go back", danger: true });
+    if (!yes) return;
+  }
+  const member = members.find((m) => m.id === memberId);
+  const ok = await run(button, () => api(`/api/admin/game-requests/${encodeURIComponent(r.id)}/review`, { method: "POST", body: { decision, memberId, reason } }),
+    decision === "approve" ? `Added to ${member?.name}.` : "Request rejected.");
+  await load();
+  if (ok) refreshPending();
+}
+
+async function load() {
+  const [r, d] = await Promise.all([api("/api/admin/game-requests"), api("/api/admin/site-data")]);
+  requests = r.requests || [];
+  members = (d.members || []).filter((m) => m.active !== false);
+  render();
+}
+
+$$("#tabs button").forEach((b) => b.addEventListener("click", () => {
+  tab = b.dataset.status;
+  $$("#tabs button").forEach((other) => other.setAttribute("aria-pressed", String(other === b)));
+  render();
+}));
+
+// Pick up new requests, but never redraw while someone is partway through a review.
+setInterval(() => {
+  const busy = document.querySelector("dialog[open]") || document.activeElement?.closest?.("[data-id]");
+  if (!busy) load().catch(() => {});
+}, 20000);
+load().catch((error) => toast(error.message, true));

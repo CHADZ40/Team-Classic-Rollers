@@ -23,6 +23,14 @@ Back up `/var/lib/tcr/site-data.json`, `/var/lib/tcr/logs.json` if present, and 
 - Member sign-in: `/login` on the public site. A member is linked once with an admin's verification link, then sends `/login` to the Telegram bot for a new sign-in link whenever they need one. Set `TELEGRAM_BOT_USERNAME` in `backend/.env` so the page can link to the bot.
 - Deployment examples: `deploy/`.
 
+## Telegram score alerts
+New score requests are sent to the chats in `TELEGRAM_ADMIN_CHAT_IDS` with Approve and Reject buttons.
+1. In the chat you want alerts in, add the bot if it's a group, then send `/chatid`.
+2. Add that number to `TELEGRAM_ADMIN_CHAT_IDS` in `backend/.env`. Separate several with commas. `TELEGRAM_BOT_TOKEN` must also be set there.
+3. Restart the backend, then use **Send a test message** on the admin home page.
+
+Anyone in a listed group can approve, so only list chats you trust. Public form names aren't verified, so check the proof first.
+
 ## Admin dashboard
 - Admin domain: `https://admin.teamclassicrollers.club`
 - Login page: `/login.html`

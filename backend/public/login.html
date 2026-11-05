@@ -1,26 +1,26 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Admin Login | Team Classic Rollers</title>
-  <link rel="icon" href="/assets/tcr-logo.png">
-  <link rel="stylesheet" href="/admin.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Admin Sign In | Team Classic Rollers</title>
+<link rel="icon" href="/assets/opt/logo.webp">
+<link rel="stylesheet" href="/admin.css">
 </head>
-
 <body class="login-body">
-  <main class="login-card"><img src="/assets/opt/logo.webp" alt="Team Classic Rollers" class="admin-logo">
-    <p class="eyebrow">TEAM CLASSIC ROLLERS</p>
-    <h1>Admin Login</h1>
-    <p class="muted">Sign in to manage members, scores, and website content.</p>
-    <form id="loginForm"><label>Username<input name="username" autocomplete="username" required
-          value="admin"></label><label>Password<input type="password" name="password" autocomplete="current-password"
-          required></label><button class="btn btn-primary" type="submit">Sign In</button>
-      <p id="loginError" class="error" role="alert"></p>
-    </form>
-  </main>
-  <script src="/login.js"></script>
+<main class="login-card">
+  <img src="/assets/opt/logo.webp" alt="Team Classic Rollers">
+  <p class="eyebrow">Team admin</p>
+  <h1>Sign in</h1>
+  <form id="loginForm">
+    <label class="field">Username<input name="username" autocomplete="username" required value="admin"></label>
+    <label class="field">Password<input type="password" name="password" autocomplete="current-password" required></label>
+    <button class="btn btn-primary btn-full" type="submit">Sign in</button>
+    <p id="loginError" class="error" role="alert"></p>
+  </form>
+  <a class="back" href="https://teamclassicrollers.club">Back to the website</a>
+</main>
+<script src="/login.js"></script>
 </body>
-
 </html>

@@ -1,77 +1,41 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Activity Logs | Team Classic Rollers</title>
-  <link rel="icon" href="/assets/tcr-logo.png">
-  <link rel="stylesheet" href="/admin.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Activity | TCR Admin</title>
+<link rel="icon" href="/assets/opt/logo.webp">
+<link rel="stylesheet" href="/admin.css">
 </head>
-
-<body>
-  <header class="admin-header"><a href="/dashboard.html" class="brand"><img src="/assets/opt/logo.webp"
-        alt=""><span>TEAM CLASSIC <strong>ROLLERS</strong><small>ADMIN ACTIVITY LOGS</small></span></a>
-    <div class="header-actions"><a href="/dashboard.html" class="btn btn-outline">Dashboard</a><button id="refreshLogs"
-        class="btn btn-outline">Refresh</button><button id="logoutBtn" class="btn btn-ghost">Log Out</button></div>
-  </header>
-  <main class="admin-shell">
-    <section class="welcome-row">
-      <div>
-        <p class="eyebrow">AUDIT TRAIL · V0.0.9</p>
-        <h1>Activity Logs</h1>
-        <p class="muted">Review score adjustments and changes made in the admin dashboard.</p>
-      </div>
-      <div class="status-pill"><span></span> Admin-only</div>
-    </section>
-    <div id="notice" class="notice" aria-live="polite" hidden></div>
-    <section class="overview-grid">
-      <article class="overview-card"><span>Total recorded actions</span><strong id="logCount">0</strong></article>
-      <article class="overview-card"><span>Score changes</span><strong id="scoreLogCount">0</strong></article>
-      <article class="overview-card"><span>Latest activity</span><strong id="latestLog"
-          style="font-size:20px">None</strong></article>
-    </section>
-    <section class="panel">
-      <div class="panel-heading">
-        <div>
-          <p class="eyebrow">ADMIN HISTORY</p>
-          <h2>Recorded Actions</h2>
-          <p class="muted">Newest activity appears first. Up to 1,000 recent records are displayed.</p>
-        </div>
-      </div>
-      <div class="logs-toolbar"><input id="logSearch" type="search" placeholder="Search member, action, team..."><select
-          id="actionFilter">
-          <option value="">All actions</option>
-          <option value="score_added">Score added</option>
-          <option value="score_removed">Score removed</option>
-          <option value="games_adjusted">Games adjusted</option>
-          <option value="member_stats_set">Statistics set</option>
-          <option value="member_added">Member added</option>
-          <option value="member_removed">Member removed</option>
-          <option value="member_updated">Member updated</option>
-          <option value="website_content_updated">Website content updated</option>
-        </select></div>
-      <div class="table-wrap">
-        <table class="logs-table">
-          <thead>
-            <tr>
-              <th>Date &amp; time</th>
-              <th>Admin</th>
-              <th>Action</th>
-              <th>Member / details</th>
-              <th>Change</th>
-            </tr>
-          </thead>
-          <tbody id="logsBody">
-            <tr>
-              <td colspan="5">Loading logs...</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-  </main>
-  <script src="/logs.js"></script>
+<body data-page="logs">
+<main class="page">
+  <div class="head">
+    <div>
+      <p class="eyebrow">History</p>
+      <h1>Activity</h1>
+      <p class="sub">Every change made by admins, newest first. Shows up to the last 1,000 records.</p>
+    </div>
+  </div>
+  <div class="toolbar">
+    <input id="logSearch" type="search" placeholder="Search player or action" aria-label="Search activity">
+    <select id="actionFilter" aria-label="Filter by action"><option value="">All activity</option></select>
+  </div>
+  <section class="panel">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>When</th><th>Who</th><th>What</th><th>Player</th><th>Change</th></tr></thead>
+        <tbody id="logsBody"><tr><td colspan="5" class="dim">Loading…</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+  <section class="danger-zone gap-lg">
+    <h3>Danger zone</h3>
+    <p class="dim small">Deletes the whole activity history, which also clears score history on player profiles.</p>
+    <div class="btn-row"><button type="button" class="btn btn-danger-quiet" id="resetLogs">Delete all activity</button></div>
+  </section>
+</main>
+<script src="/admin-core.js"></script>
+<script src="/logs.js"></script>
 </body>
-
 </html>
