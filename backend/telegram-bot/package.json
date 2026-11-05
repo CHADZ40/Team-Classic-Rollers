@@ -1,0 +1,12 @@
+{
+  "name": "tcr-telegram-bot",
+  "version": "0.1.4",
+  "private": true,
+  "description": "Telegram bot foundation for TCR member account linking",
+  "scripts": {
+    "start": "node bot.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
