@@ -1,2 +1,0 @@
-const form=document.querySelector("#loginForm");
-form.addEventListener("submit",async e=>{e.preventDefault();const data=Object.fromEntries(new FormData(form));const error=document.querySelector("#loginError");error.textContent="";try{const r=await fetch("/api/admin/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data),credentials:"include"});const j=await r.json();if(!r.ok)throw new Error(j.error||"Login failed");sessionStorage.setItem("tcrAdminToken",j.token);location.href="/dashboard.html"}catch(err){error.textContent=err.message}});

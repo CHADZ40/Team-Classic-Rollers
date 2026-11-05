@@ -19,7 +19,10 @@ Back up `/var/lib/tcr/site-data.json`, `/var/lib/tcr/logs.json` if present, and 
   - Test the scoring logic: `npm test`.
   - Build for release: `npm run build`, then serve `frontend/dist/` (see `deploy/teamclassicrollers.club.nginx.conf`).
   - Keep `frontend/public/assets/members/*.png` and their filenames. Member records point to them. Smaller copies are in `assets/members/thumbs/` and `assets/opt/`.
-- VPS backend and admin dashboard: `backend/` (initial data in `backend/seed/`).
+- Admin dashboard: `admin/`, a React app built with Vite.
+  - Build for release: `cd admin && npm install && npm run build`. It builds into `backend/admin-dist/`, which the backend serves. It isn't in Git, so build before uploading `backend/`.
+  - Run locally: start the backend on port 3100, then `npm run dev` in `admin/`.
+- VPS backend: `backend/` (initial data in `backend/seed/`).
 - Member sign-in: `/login` on the public site. A member is linked once with an admin's verification link, then sends `/login` to the Telegram bot for a new sign-in link whenever they need one. Set `TELEGRAM_BOT_USERNAME` in `backend/.env` so the page can link to the bot.
 - Deployment examples: `deploy/`.
 

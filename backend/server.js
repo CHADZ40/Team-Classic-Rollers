@@ -60,7 +60,16 @@ app.use((req, res, next) => {
   next();
 });
 
-const limiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 100, standardHeaders: "draft-7", legacyHeaders: false });
+// Cloudflare sits in front, so count each visitor by their real address. Otherwise everyone
+// arriving through the same Cloudflare server shares one limit. The bot's calls are already
+// protected by a secret and must keep working during a busy spell.
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, limit: 300, standardHeaders: "draft-7", legacyHeaders: false,
+  keyGenerator: req => String(req.headers["cf-connecting-ip"] || req.ip),
+  skip: req => req.path.startsWith("/internal/"),
+  message: { error: "Too many requests right now. Please wait a few minutes and try again." },
+  validate: { xForwardedForHeader: false },
+});
 app.use("/api", limiter);
 
 const storage = multer.diskStorage({
@@ -348,8 +357,6 @@ app.get("/api/admin/logs", requireAdmin, (_req,res) => {
     res.json({ logs: logs.slice(0, 1000) });
   } catch (error) { res.status(500).json({ error: "Unable to read audit logs." }); }
 });
-app.get("/logs", (_req,res) => res.sendFile(path.join(__dirname, "public", "logs.html")));
-app.get("/request", (_req,res) => res.sendFile(path.join(__dirname, "public", "request.html")));
 
 app.patch("/api/admin/content", requireAdmin, (req,res) => {
   const allowed = ["homeTitle","homeDescription","aboutTitle","aboutDescription","aboutHeading","aboutBody","aboutBody2"];
@@ -521,8 +528,23 @@ app.post('/api/admin/member-accounts/:telegramId/resend',requireAdmin,async(req,
 
 // The public site is a different origin, so photos must be allowed to load there.
 app.use("/uploads", (_req,res,next) => { res.setHeader("Cross-Origin-Resource-Policy", "same-site"); next(); }, express.static(UPLOAD_DIR, { maxAge: "1d", immutable: true }));
-app.use(express.static(path.join(__dirname, "public")));
-app.get("/", (_req,res) => res.redirect("/login.html"));
+// The admin is a React app built into admin-dist. Bundled files have unique names, so they
+// can be cached for good; the page itself is always rechecked so it finds the newest ones.
+const ADMIN_DIST = path.join(__dirname, "admin-dist");
+const ADMIN_PAGES = ["/login","/dashboard","/request","/players","/news","/content","/member-accounts","/logs",
+  "/login.html","/dashboard.html","/players.html","/news.html","/content.html","/member-accounts.html","/request.html","/logs.html"];
+app.use("/admin-static", express.static(path.join(ADMIN_DIST, "admin-static"), { maxAge: "1y", immutable: true }));
+app.get(ADMIN_PAGES, (_req,res) => {
+  const page = path.join(ADMIN_DIST, "index.html");
+  if (!fs.existsSync(page)) return res.status(503).send("The admin app hasn't been built. Run npm run build in the admin folder.");
+  res.setHeader("Cache-Control", "no-cache");
+  res.sendFile(page);
+});
+// Member portal and shared images.
+app.use(express.static(path.join(__dirname, "public"), {
+  setHeaders: (res, file) => { if (/\.(html|js|css)$/.test(file)) res.setHeader("Cache-Control", "no-cache"); },
+}));
+app.get("/", (_req,res) => res.redirect("/login"));
 app.use((err,_req,res,_next) => {
   console.error(err);
   res.status(400).json({ error: err.message || "Request failed." });
