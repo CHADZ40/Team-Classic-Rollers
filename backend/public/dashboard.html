@@ -1,13 +1,114 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Admin Dashboard | Team Classic Rollers v0.1.3</title><link rel="icon" href="/assets/tcr-logo.png"><link rel="stylesheet" href="/admin.css"></head>
-<body><header class="admin-header"><a href="/dashboard.html" class="brand"><img src="/assets/tcr-logo.png" alt=""> <span>TEAM CLASSIC <strong>ROLLERS</strong><small>ADMIN DASHBOARD</small></span></a><button class="admin-menu-toggle" id="adminMenuToggle" aria-expanded="false" aria-label="Open admin menu">☰ Menu</button><div class="header-actions" id="adminHeaderActions"><a href="/request" class="btn btn-outline">Score Requests</a><a href="/logs" class="btn btn-outline">Activity Logs</a><a href="https://teamclassicrollers.club" target="_blank" rel="noopener" class="btn btn-outline">View Website</a><button id="logoutBtn" class="btn btn-ghost">Log Out</button></div></header>
-<main class="admin-shell"><section class="welcome-row"><div><p class="eyebrow">CONTROL CENTER · V0.1.2</p><h1>Team Management</h1><p class="muted">Manage each squad in the same order as the public website.</p></div><div class="status-pill"><span></span> Connected to TCR API</div></section>
-<div id="notice" class="notice" aria-live="polite"></div>
-<section class="overview-grid"><article class="overview-card"><span>Active Members</span><strong id="countMembers">0</strong><small id="teamCounts">Team A: 0 · Team B: 0 · Team C: 0</small></article><article class="overview-card"><span>Total Games</span><strong id="sumGames">0</strong><small>Across all active members</small></article><article class="overview-card"><span>Total Scores</span><strong id="sumScores">0</strong><small id="recentActivity">Loading recent activity…</small></article></section>
-<section class="panel"><div class="panel-heading"><div><p class="eyebrow">ROSTER</p><h2>Member Scores</h2><p class="muted">Enter an amount and choose Add or Remove to adjust the total score. Every change is recorded in Activity Logs.</p></div><div class="roster-actions"><button class="btn btn-outline" id="resetAllScores" type="button">Reset All Scores</button><button class="btn btn-danger" id="resetAllLogs" type="button">Reset All Logs</button><button class="btn btn-primary" id="showAddMember">+ Add Member</button></div></div><div id="membersByTeam"></div></section>
-<section class="panel"><div class="panel-heading"><div><p class="eyebrow">WEBSITE EDITOR</p><h2>Page Content</h2><p class="muted">Changes appear on the public site after saving.</p></div></div>
-<form id="contentForm" class="content-form"><label>Home headline<input name="homeTitle" required></label><label>Home description<textarea name="homeDescription" rows="2"></textarea></label><label>About headline<input name="aboutTitle" required></label><label>About description<textarea name="aboutDescription" rows="2"></textarea></label><label>About section heading<input name="aboutHeading"></label><label>About paragraph 1<textarea name="aboutBody" rows="3"></textarea></label><label>About paragraph 2<textarea name="aboutBody2" rows="3"></textarea></label><button class="btn btn-primary" type="submit">Save Website Content</button></form></section>
-<section class="panel"><div class="panel-heading"><div><p class="eyebrow">NEWS · EVENTS · RESULTS</p><h2>Announcements & Tournaments</h2><p class="muted">Publish tournament results, team news, new members, upcoming events, and achievements.</p></div></div><form id="newsForm" class="content-form"><label>Title<input name="title" required maxlength="160" placeholder="e.g. October Team Tournament Results"></label><label>Type<select name="type"><option>Announcement</option><option>Tournament</option><option>Results</option><option>New Member</option><option>Achievement</option><option>Upcoming Event</option></select></label><label>Date<input name="date" type="date"></label><label>Details<textarea name="body" rows="3" required maxlength="5000" placeholder="Write the update for the public website"></textarea></label><label class="checkbox-label"><input name="published" type="checkbox" checked> Publish on public website</label><button class="btn btn-primary" type="submit">Publish Update</button></form><div id="newsList" class="news-admin-list"></div></section>
-<section class="panel" id="addMemberPanel" hidden><div class="panel-heading"><div><p class="eyebrow">NEW ROSTER ENTRY</p><h2>Add Member</h2></div><button class="btn btn-ghost" id="hideAddMember" type="button">Close</button></div><form id="addMemberForm" class="content-form"><label>Member name<input name="name" required maxlength="100"></label><label>Team<select name="team" required><option value="Team A">Team A</option><option value="Team B">Team B</option><option value="Team C">Team C</option></select></label><label>Photo (PNG, JPG, WEBP, max 5MB)<input type="file" name="photo" accept="image/png,image/jpeg,image/webp"></label><button class="btn btn-primary" type="submit">Create Member</button></form></section>
-</main><script src="/dashboard.js"></script><script src="/request-badge.js"></script></body></html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Admin Dashboard | Team Classic Rollers v0.1.3</title>
+  <link rel="icon" href="/assets/tcr-logo.png">
+  <link rel="stylesheet" href="/admin.css">
+</head>
+
+<body>
+  <header class="admin-header"><a href="/dashboard.html" class="brand"><img src="/assets/opt/logo.webp" alt="">
+      <span>TEAM CLASSIC <strong>ROLLERS</strong><small>ADMIN DASHBOARD</small></span></a><button
+      class="admin-menu-toggle" id="adminMenuToggle" aria-expanded="false" aria-label="Open admin menu">☰ Menu</button>
+    <div class="header-actions" id="adminHeaderActions"><a href="/request" class="btn btn-outline">Score Requests</a><a
+        href="/logs" class="btn btn-outline">Activity Logs</a><a href="https://teamclassicrollers.club" target="_blank"
+        rel="noopener" class="btn btn-outline">View Website</a><button id="logoutBtn" class="btn btn-ghost">Log
+        Out</button></div>
+  </header>
+  <main class="admin-shell">
+    <section class="welcome-row">
+      <div>
+        <p class="eyebrow">CONTROL CENTER · V0.1.2</p>
+        <h1>Team Management</h1>
+        <p class="muted">Manage each squad in the same order as the public website.</p>
+      </div>
+      <div class="status-pill"><span></span> Connected to TCR API</div>
+    </section>
+    <div id="notice" class="notice" aria-live="polite"></div>
+    <section class="overview-grid">
+      <article class="overview-card"><span>Active Members</span><strong id="countMembers">0</strong><small
+          id="teamCounts">Team A: 0 · Team B: 0 · Team C: 0</small></article>
+      <article class="overview-card"><span>Total Games</span><strong id="sumGames">0</strong><small>Across all active
+          members</small></article>
+      <article class="overview-card"><span>Total Scores</span><strong id="sumScores">0</strong><small
+          id="recentActivity">Loading recent activity…</small></article>
+    </section>
+    <section class="panel">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">ROSTER</p>
+          <h2>Member Scores</h2>
+          <p class="muted">Enter an amount and choose Add or Remove to adjust the total score. Every change is recorded
+            in Activity Logs.</p>
+        </div>
+        <div class="roster-actions"><button class="btn btn-outline" id="resetAllScores" type="button">Reset All
+            Scores</button><button class="btn btn-danger" id="resetAllLogs" type="button">Reset All Logs</button><button
+            class="btn btn-primary" id="showAddMember">+ Add Member</button></div>
+      </div>
+      <div id="membersByTeam"></div>
+    </section>
+    <section class="panel">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">WEBSITE EDITOR</p>
+          <h2>Page Content</h2>
+          <p class="muted">Changes appear on the public site after saving.</p>
+        </div>
+      </div>
+      <form id="contentForm" class="content-form"><label>Home headline<input name="homeTitle"
+            required></label><label>Home description<textarea name="homeDescription"
+            rows="2"></textarea></label><label>About headline<input name="aboutTitle" required></label><label>About
+          description<textarea name="aboutDescription" rows="2"></textarea></label><label>About section heading<input
+            name="aboutHeading"></label><label>About paragraph 1<textarea name="aboutBody"
+            rows="3"></textarea></label><label>About paragraph 2<textarea name="aboutBody2"
+            rows="3"></textarea></label><button class="btn btn-primary" type="submit">Save Website Content</button>
+      </form>
+    </section>
+    <section class="panel">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">NEWS · EVENTS · RESULTS</p>
+          <h2>Announcements & Tournaments</h2>
+          <p class="muted">Publish tournament results, team news, new members, upcoming events, and achievements.</p>
+        </div>
+      </div>
+      <form id="newsForm" class="content-form"><label>Title<input name="title" required maxlength="160"
+            placeholder="e.g. October Team Tournament Results"></label><label>Type<select name="type">
+            <option>Announcement</option>
+            <option>Tournament</option>
+            <option>Results</option>
+            <option>New Member</option>
+            <option>Achievement</option>
+            <option>Upcoming Event</option>
+          </select></label><label>Date<input name="date" type="date"></label><label>Details<textarea name="body"
+            rows="3" required maxlength="5000"
+            placeholder="Write the update for the public website"></textarea></label><label
+          class="checkbox-label"><input name="published" type="checkbox" checked> Publish on public
+          website</label><button class="btn btn-primary" type="submit">Publish Update</button></form>
+      <div id="newsList" class="news-admin-list"></div>
+    </section>
+    <section class="panel" id="addMemberPanel" hidden>
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">NEW ROSTER ENTRY</p>
+          <h2>Add Member</h2>
+        </div><button class="btn btn-ghost" id="hideAddMember" type="button">Close</button>
+      </div>
+      <form id="addMemberForm" class="content-form"><label>Member name<input name="name" required
+            maxlength="100"></label><label>Team<select name="team" required>
+            <option value="Team A">Team A</option>
+            <option value="Team B">Team B</option>
+            <option value="Team C">Team C</option>
+          </select></label><label>Photo (PNG, JPG, WEBP, max 5MB)<input type="file" name="photo"
+            accept="image/png,image/jpeg,image/webp"></label><button class="btn btn-primary" type="submit">Create
+          Member</button></form>
+    </section>
+  </main>
+  <script src="/dashboard.js"></script>
+  <script src="/request-badge.js"></script>
+</body>
+
+</html>

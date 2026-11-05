@@ -14,8 +14,13 @@ Back up `/var/lib/tcr/site-data.json`, `/var/lib/tcr/logs.json` if present, and 
 # Team Classic Rollers v0.0.8
 
 ## Project structure
-- Public website: the HTML files in the project root, `css/`, `js/`, `members/`, and `assets/`.
-- VPS backend and admin dashboard: `backend/`.
+- Public website: `frontend/`, a React app built with Vite. Source is in `frontend/src/`, static files in `frontend/public/`.
+  - Run locally: `cd frontend && npm install && npm run dev`. Reads real stats from the live API; writes are blocked locally.
+  - Test the scoring logic: `npm test`.
+  - Build for release: `npm run build`, then serve `frontend/dist/` (see `deploy/teamclassicrollers.club.nginx.conf`).
+  - Keep `frontend/public/assets/members/*.png` and their filenames. Member records point to them. Smaller copies are in `assets/members/thumbs/` and `assets/opt/`.
+- VPS backend and admin dashboard: `backend/` (initial data in `backend/seed/`).
+- Member sign-in: `/login` on the public site. A member is linked once with an admin's verification link, then sends `/login` to the Telegram bot for a new sign-in link whenever they need one. Set `TELEGRAM_BOT_USERNAME` in `backend/.env` so the page can link to the bot.
 - Deployment examples: `deploy/`.
 
 ## Admin dashboard
@@ -41,7 +46,7 @@ Back up `/var/lib/tcr/site-data.json`, `/var/lib/tcr/logs.json` if present, and 
    `sudo chown -R $USER:$USER /var/lib/tcr`
 7. Copy the seed data:
    `sudo mkdir -p /var/lib/tcr`
-   `cp data/site-data.json /var/lib/tcr/site-data.json`
+   `cp seed/site-data.json /var/lib/tcr/site-data.json`
 8. Start backend:
    `pm2 start ecosystem.config.cjs`
    `pm2 save`
