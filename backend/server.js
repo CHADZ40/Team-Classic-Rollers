@@ -20,6 +20,10 @@ const ADMIN_USER = process.env.ADMIN_USER || "admin";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 const SESSION_SECRET = process.env.SESSION_SECRET;
 const TOKEN_TTL_SECONDS = 8 * 60 * 60;
+const TELEGRAM_API = (process.env.TELEGRAM_API_BASE || "https://api.telegram.org").replace(/\/$/, "");
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "";
+// Chats allowed to receive score alerts and approve them. Anyone in a listed group can approve.
+const ADMIN_CHAT_IDS = String(process.env.TELEGRAM_ADMIN_CHAT_IDS || "").split(",").map(v => v.trim()).filter(Boolean);
 
 if (!ADMIN_PASSWORD || ADMIN_PASSWORD.length < 12) {
   console.error("Set ADMIN_PASSWORD in .env to a strong password of at least 12 characters.");
@@ -171,34 +175,133 @@ app.post("/api/public/game-requests", upload.array("proofs", 6), (req,res) => {
   const item = {id:crypto.randomUUID(),name,games,scores,status:"pending",proofs:(req.files||[]).map(f=>`/uploads/${path.basename(f.path)}`),createdAt:new Date().toISOString()};
   const items = readRequests(); items.unshift(item); writeRequests(items);
   writeAuditLog("game_request_submitted", {requestId:item.id, requester:item.name, games:item.games, scores:item.scores});
+  notifyAdminsOfRequest(item).catch(error => console.error("Telegram alert failed:", error.message));
   res.status(201).json({ok:true,message:"Request submitted. The team admin will review it."});
 });
 app.get("/api/admin/game-requests", requireAdmin, (_req,res) => res.json({requests:readRequests()}));
-app.post("/api/admin/game-requests/:id/review", requireAdmin, (req,res) => {
+// The one place a score request gets decided, used by the dashboard and by Telegram.
+function reviewRequest({ id, decision, memberId, reason = "", actor }) {
   const requests = readRequests();
-  const item = requests.find(r => r.id === req.params.id);
-  if (!item) return res.status(404).json({error:"Request not found."});
-  if (item.status !== "pending") return res.status(409).json({error:"This request has already been reviewed."});
-  const decision = String(req.body.decision || "");
-  const reason = String(req.body.reason || "").trim().slice(0,300);
+  const item = requests.find(r => r.id === id);
+  if (!item) return { status: 404, body: { error: "Request not found." } };
+  if (item.status !== "pending") return { status: 409, body: { error: "This request has already been reviewed." } };
+  const note = String(reason || "").trim().slice(0,300);
+  const by = actor ? { actor } : {};
   if (decision === "reject") {
-    item.status = "rejected"; item.reviewedAt = new Date().toISOString(); item.reviewReason = reason;
-    writeRequests(requests); writeAuditLog("game_request_rejected", {requestId:item.id, requester:item.name, reason});
-    return res.json({ok:true,request:item});
+    item.status = "rejected"; item.reviewedAt = new Date().toISOString(); item.reviewReason = note;
+    writeRequests(requests); writeAuditLog("game_request_rejected", {requestId:item.id, requester:item.name, reason:note, ...by});
+    closeRequestAlerts(item, `❌ Rejected${actor ? ` by ${actor}` : " in the dashboard"}`);
+    return { status: 200, body: { ok:true, request:item } };
   }
-  if (decision !== "approve") return res.status(400).json({error:"Choose approve or reject."});
-  const memberId = String(req.body.memberId || "");
+  if (decision !== "approve") return { status: 400, body: { error: "Choose approve or reject." } };
   const data = readData();
-  const member = data.members.find(m => String(m.id) === memberId && m.active !== false);
-  if (!member) return res.status(400).json({error:"Select an active member to receive these statistics."});
+  const member = data.members.find(m => String(m.id) === String(memberId || "") && m.active !== false);
+  if (!member) return { status: 400, body: { error: "Select an active member to receive these statistics." } };
   const previousGames = Number(member.games)||0, previousScores = Number(member.scores)||0;
   member.games = previousGames + item.games;
   member.scores = previousScores + item.scores;
   writeData(data);
-  item.status = "approved"; item.memberId = member.id; item.memberName = member.name; item.reviewedAt = new Date().toISOString(); item.reviewReason = reason;
+  item.status = "approved"; item.memberId = member.id; item.memberName = member.name; item.reviewedAt = new Date().toISOString(); item.reviewReason = note;
   writeRequests(requests);
-  writeAuditLog("game_request_approved", {requestId:item.id, requester:item.name, memberId:member.id, memberName:member.name, team:member.team, gamesAdded:item.games, previousGames, newGames:member.games, scoresAdded:item.scores, previousScores, newScores:member.scores, reason});
-  res.json({ok:true,request:item,member:cleanMember(member)});
+  writeAuditLog("game_request_approved", {requestId:item.id, requester:item.name, memberId:member.id, memberName:member.name, team:member.team, gamesAdded:item.games, previousGames, newGames:member.games, scoresAdded:item.scores, previousScores, newScores:member.scores, reason:note, ...by});
+  closeRequestAlerts(item, `✅ Approved${actor ? ` by ${actor}` : " in the dashboard"} and added to ${member.name}`);
+  return { status: 200, body: { ok:true, request:item, member:cleanMember(member) } };
+}
+app.post("/api/admin/game-requests/:id/review", requireAdmin, (req,res) => {
+  const result = reviewRequest({ id:req.params.id, decision:String(req.body.decision||""), memberId:req.body.memberId, reason:req.body.reason });
+  res.status(result.status).json(result.body);
+});
+
+// Telegram alerts for new score requests. A failure here must never affect the request itself.
+function findRequestMember(item, data) {
+  const active = data.members.filter(m => m.active !== false);
+  if (item.memberId) return active.find(m => String(m.id) === String(item.memberId)) || null;
+  const clean = v => String(v||"").toLowerCase().replace(/[^\p{L}\p{N}]/gu,"");
+  const matches = active.filter(m => clean(m.name) === clean(item.name));
+  return matches.length === 1 ? matches[0] : null;
+}
+function requestAlertText(item, member) {
+  const games = Number(item.games)||0, scores = Number(item.scores)||0;
+  const proofs = (item.proofs||[]).length;
+  return [
+    "🎳 New score request",
+    "",
+    `From: ${item.name}${member ? ` (${member.team})` : ""}`,
+    member ? null : "⚠️ This name doesn't match the roster.",
+    `Games: ${games}`,
+    `Total pins: ${scores}`,
+    `Average: ${games ? (scores/games).toFixed(1) : "0.0"}`,
+    `Proof photos: ${proofs || "none"}`,
+    item.notes ? `Note: ${String(item.notes).slice(0,300)}` : null,
+    item.source === "member-portal" ? "Sent from: Member Portal (verified member)" : "Sent from: public form (name not verified)",
+  ].filter(v => v !== null).join("\n");
+}
+async function telegramCall(method, body) {
+  const options = body instanceof FormData
+    ? { method:"POST", body }
+    : { method:"POST", headers:{ "content-type":"application/json" }, body:JSON.stringify(body) };
+  const response = await fetch(`${TELEGRAM_API}/bot${TELEGRAM_BOT_TOKEN}/${method}`, options);
+  const json = await response.json();
+  if (!json.ok) throw new Error(json.description || "Telegram API error");
+  return json.result;
+}
+const telegramReady = () => Boolean(TELEGRAM_BOT_TOKEN && ADMIN_CHAT_IDS.length);
+async function sendRequestAlert(chatId, item, text, keyboard) {
+  const proof = (item.proofs||[])[0];
+  const file = proof && path.join(UPLOAD_DIR, path.basename(proof));
+  if (file && fs.existsSync(file)) {
+    try {
+      const form = new FormData();
+      form.append("chat_id", chatId);
+      form.append("caption", text);
+      form.append("reply_markup", JSON.stringify(keyboard));
+      form.append("photo", new Blob([fs.readFileSync(file)]), path.basename(file));
+      const sent = await telegramCall("sendPhoto", form);
+      return { chatId, messageId:sent.message_id, photo:true };
+    } catch (error) { console.error("Telegram photo alert failed:", error.message); }
+  }
+  const sent = await telegramCall("sendMessage", { chat_id:chatId, text, reply_markup:keyboard });
+  return { chatId, messageId:sent.message_id, photo:false };
+}
+async function notifyAdminsOfRequest(item) {
+  if (!telegramReady()) return;
+  const member = findRequestMember(item, readData());
+  const text = requestAlertText(item, member);
+  const reviewLink = { text:"🔎 Open in dashboard", url:`${PORTAL_ORIGIN}/request` };
+  const keyboard = { inline_keyboard: member
+    ? [[{ text:`✅ Approve for ${member.name}`.slice(0,60), callback_data:`tcr:a:${item.id}` }],[{ text:"❌ Reject", callback_data:`tcr:r:${item.id}` }],[reviewLink]]
+    : [[reviewLink],[{ text:"❌ Reject", callback_data:`tcr:r:${item.id}` }]] };
+  const sent = [];
+  for (const chatId of ADMIN_CHAT_IDS) {
+    try { sent.push(await sendRequestAlert(chatId, item, text, keyboard)); }
+    catch (error) { console.error(`Telegram alert to ${chatId} failed:`, error.message); }
+  }
+  if (!sent.length) return;
+  const requests = readRequests();
+  const stored = requests.find(r => r.id === item.id);
+  if (!stored) return;
+  stored.telegramAlerts = sent;
+  writeRequests(requests);
+}
+function closeRequestAlerts(item, outcome) {
+  if (!TELEGRAM_BOT_TOKEN || !(item.telegramAlerts||[]).length) return;
+  const text = `${requestAlertText(item, findRequestMember(item, readData()))}\n\n${outcome}`;
+  for (const alert of item.telegramAlerts) {
+    const target = { chat_id:alert.chatId, message_id:alert.messageId, reply_markup:{ inline_keyboard:[] } };
+    telegramCall(alert.photo ? "editMessageCaption" : "editMessageText", alert.photo ? { ...target, caption:text } : { ...target, text })
+      .catch(error => console.error("Telegram alert update failed:", error.message));
+  }
+}
+app.get("/api/admin/telegram-status", requireAdmin, (_req,res) => res.json({ bot:BOT_USERNAME||null, hasToken:Boolean(TELEGRAM_BOT_TOKEN), adminChats:ADMIN_CHAT_IDS.length, ready:telegramReady() }));
+app.post("/api/admin/telegram-test", requireAdmin, async (_req,res) => {
+  if (!telegramReady()) return res.status(400).json({ error:"Set TELEGRAM_BOT_TOKEN and TELEGRAM_ADMIN_CHAT_IDS in backend .env first." });
+  const failed = [];
+  for (const chatId of ADMIN_CHAT_IDS) {
+    try { await telegramCall("sendMessage", { chat_id:chatId, text:"🎳 Test from the TCR dashboard. Score request alerts will arrive here." }); }
+    catch (error) { failed.push(error.message); }
+  }
+  if (failed.length) return res.status(502).json({ error:`Telegram said: ${failed[0]}` });
+  res.json({ ok:true });
 });
 app.get("/api/public/site-data", (_req,res) => {
   res.set("Cache-Control", "no-store");
@@ -383,6 +486,8 @@ function createBrowserTicket(telegramId,memberId){const raw=crypto.randomBytes(3
 app.get('/api/public/login-info',(_req,res)=>res.json({telegramBot:BOT_USERNAME||null}));
 // Lets an already-verified member get a fresh sign-in link from the bot with /login.
 app.post('/api/internal/telegram/login',(req,res)=>{if(!INTERNAL_SECRET||req.headers['x-tcr-internal-secret']!==INTERNAL_SECRET)return res.status(401).json({error:'Unauthorized'});const telegramId=String(req.body.telegramId||'');const account=telegramId&&readList('accounts').find(a=>String(a.telegramId)===telegramId);if(!account)return res.status(404).json({error:'This Telegram account is not linked yet. Ask a TCR administrator for a verification link.'});const member=readData().members.find(m=>String(m.id)===String(account.memberId)&&m.active!==false);if(!member)return res.status(400).json({error:'Member profile is no longer active.'});const ticket=createBrowserTicket(telegramId,account.memberId);writeAuditLog('member_login_link_sent',{memberId:String(account.memberId),memberName:member.name,telegramId});res.json({ok:true,name:member.name,loginUrl:`${PORTAL_ORIGIN}/member-portal.html?ticket=${encodeURIComponent(ticket)}`});});
+// Approve and Reject buttons on Telegram alerts. Only listed admin chats may use them.
+app.post('/api/internal/telegram/review',(req,res)=>{if(!INTERNAL_SECRET||req.headers['x-tcr-internal-secret']!==INTERNAL_SECRET)return res.status(401).json({error:'Unauthorized'});if(!ADMIN_CHAT_IDS.includes(String(req.body.chatId||'')))return res.status(403).json({error:'This chat is not allowed to review scores.'});const id=String(req.body.requestId||'');const decision=req.body.decision==='approve'?'approve':'reject';const item=readRequests().find(r=>r.id===id);if(!item)return res.status(404).json({error:'Request not found.'});const member=decision==='approve'?findRequestMember(item,readData()):null;if(decision==='approve'&&!member)return res.status(400).json({error:'Open the dashboard to choose the member.'});const result=reviewRequest({id,decision,memberId:member?.id,actor:String(req.body.actor||'Telegram admin').slice(0,60),reason:'Reviewed in Telegram'});res.status(result.status).json(result.status===200?{ok:true,message:decision==='approve'?`Added to ${member.name}.`:'Request rejected.'}:result.body);});
 app.post('/api/internal/telegram/verify',async(req,res)=>{if(!INTERNAL_SECRET||req.headers['x-tcr-internal-secret']!==INTERNAL_SECRET)return res.status(401).json({error:'Unauthorized'});const startToken=String(req.body.startToken||'');const telegramId=String(req.body.telegramId||'');const username=String(req.body.username||'').slice(0,100);if(!startToken||!telegramId)return res.status(400).json({error:'Missing verification details.'});const hash=crypto.createHash('sha256').update(startToken).digest('hex');const tokens=readList('tokens');const t=tokens.find(x=>x.hash===hash&&!x.usedAt&&x.expiresAt>Date.now());if(!t)return res.status(400).json({error:'Verification link is expired or already used.'});const member=readData().members.find(m=>String(m.id)===String(t.memberId)&&m.active!==false);if(!member)return res.status(400).json({error:'Member profile is no longer active.'});t.usedAt=Date.now();t.telegramId=telegramId;writeList('tokens',tokens);const accounts=readList('accounts');const old=accounts.find(x=>String(x.telegramId)===telegramId);const conflict=accounts.find(x=>String(x.memberId)===String(t.memberId)&&String(x.telegramId)!==telegramId);if(conflict)return res.status(409).json({error:'This member profile is already linked to another Telegram account. Ask an admin to unlink it first.'});const account={telegramId,telegramUsername:username,memberId:String(t.memberId),verifiedAt:new Date().toISOString(),profile:old?.profile||{},notificationsEnabled:true};const next=accounts.filter(x=>String(x.telegramId)!==telegramId);next.push(account);writeList('accounts',next);const loginTicket=createBrowserTicket(telegramId,t.memberId);writeList('notifications',[{id:crypto.randomUUID(),memberId:String(t.memberId),telegramId,title:'Telegram verified',message:'Your Telegram account is linked to your TCR member profile.',createdAt:new Date().toISOString(),read:false},...readList('notifications')].slice(0,5000));writeAuditLog('member_account_verified',{memberId:String(t.memberId),memberName:member.name,telegramId});res.json({ok:true,member:{id:String(member.id),name:member.name,team:member.team,games:member.games||0,scores:member.scores||0,average:member.games?Math.round((Number(member.scores)||0)/(Number(member.games)||1)):0},loginUrl:`${PORTAL_ORIGIN}/member-portal.html?ticket=${loginTicket}`});});
 app.post('/api/member/browser-login',(req,res)=>{
  const raw=String(req.body.ticket||'');
@@ -407,14 +512,15 @@ app.post('/api/member/logout',(req,res)=>{
 app.post('/api/member/session',memberAuth,(req,res)=>res.json({ok:true,account:safeAccount(req.memberAccount)}));
 app.get('/api/member/me',memberAuth,(req,res)=>{const data=readData();const m=data.members.find(x=>String(x.id)===String(req.memberAccount.memberId));if(!m)return res.status(404).json({error:'Member profile not found.'});const games=Number(m.games)||0,scores=Number(m.scores)||0;res.json({account:safeAccount(req.memberAccount),member:{...cleanMember(m),average:games?Math.round(scores/games):0,profile:req.memberAccount.profile||{}},notifications:readList('notifications').filter(n=>String(n.memberId)===String(m.id)).slice(0,100),attendance:readList('attendance').filter(a=>String(a.memberId)===String(m.id)).slice(0,100),training:readList('training').filter(t=>t.active!==false).slice(0,100)});});
 app.patch('/api/member/profile',memberAuth,upload.single('photo'),(req,res)=>{const accounts=readList('accounts');const a=accounts.find(x=>String(x.telegramId)===String(req.memberAccount.telegramId));if(!a)return res.status(404).json({error:'Account not found.'});const before={...(a.profile||{})};const allowed=['name','phone','dateOfBirth','gender','cityProvince'];a.profile=a.profile||{};for(const k of allowed)if(typeof req.body[k]==='string')a.profile[k]=req.body[k].trim().slice(0,120);if(req.file)a.profile.photo='/uploads/'+path.basename(req.file.path);writeList('accounts',accounts);writeList('changes',[{id:crypto.randomUUID(),memberId:a.memberId,telegramId:a.telegramId,before,after:a.profile,createdAt:new Date().toISOString()},...readList('changes')].slice(0,5000));writeAuditLog('member_profile_self_updated',{memberId:a.memberId,telegramId:a.telegramId});res.json({ok:true,profile:a.profile});});
-app.post('/api/member/score-requests',memberAuth,upload.array('proofs',6),(req,res)=>{const games=Math.floor(Number(req.body.games)),scores=Math.floor(Number(req.body.scores));if(!Number.isInteger(games)||games<1||games>100||!Number.isInteger(scores)||scores<0||scores>100000)return res.status(400).json({error:'Enter valid games and total score.'});const data=readData();const member=data.members.find(m=>String(m.id)===String(req.memberAccount.memberId));const item={id:crypto.randomUUID(),name:member?.name||'Member',telegramId:req.memberAccount.telegramId,memberId:req.memberAccount.memberId,games,scores,notes:String(req.body.notes||'').slice(0,500),proofs:(req.files||[]).map(f=>'/uploads/'+path.basename(f.path)),status:'pending',createdAt:new Date().toISOString(),source:'member-portal'};const requests=readRequests();requests.unshift(item);writeRequests(requests);writeList('events',[{id:crypto.randomUUID(),requestId:item.id,memberId:item.memberId,event:'submitted',at:item.createdAt},...readList('events')].slice(0,5000));writeAuditLog('member_portal_score_request_submitted',{requestId:item.id,memberId:item.memberId,games,scores});res.json({ok:true,request:item});});
+app.post('/api/member/score-requests',memberAuth,upload.array('proofs',6),(req,res)=>{const games=Math.floor(Number(req.body.games)),scores=Math.floor(Number(req.body.scores));if(!Number.isInteger(games)||games<1||games>100||!Number.isInteger(scores)||scores<0||scores>100000)return res.status(400).json({error:'Enter valid games and total score.'});const data=readData();const member=data.members.find(m=>String(m.id)===String(req.memberAccount.memberId));const item={id:crypto.randomUUID(),name:member?.name||'Member',telegramId:req.memberAccount.telegramId,memberId:req.memberAccount.memberId,games,scores,notes:String(req.body.notes||'').slice(0,500),proofs:(req.files||[]).map(f=>'/uploads/'+path.basename(f.path)),status:'pending',createdAt:new Date().toISOString(),source:'member-portal'};const requests=readRequests();requests.unshift(item);writeRequests(requests);writeList('events',[{id:crypto.randomUUID(),requestId:item.id,memberId:item.memberId,event:'submitted',at:item.createdAt},...readList('events')].slice(0,5000));writeAuditLog('member_portal_score_request_submitted',{requestId:item.id,memberId:item.memberId,games,scores});notifyAdminsOfRequest(item).catch(error=>console.error('Telegram alert failed:',error.message));res.json({ok:true,request:item});});
 app.get('/api/member/score-requests',memberAuth,(req,res)=>res.json({requests:readRequests().filter(r=>String(r.memberId)===String(req.memberAccount.memberId)).map(r=>({id:r.id,games:r.games,scores:r.scores,status:r.status,createdAt:r.createdAt,reviewedAt:r.reviewedAt,reviewReason:r.reviewReason}))}));
 app.post('/api/admin/member-notifications',requireAdmin,(req,res)=>{const memberId=String(req.body.memberId||'');const title=String(req.body.title||'').trim().slice(0,120),message=String(req.body.message||'').trim().slice(0,2000);if(!title||!message)return res.status(400).json({error:'Title and message are required.'});const targets=memberId?readList('accounts').filter(a=>String(a.memberId)===memberId):readList('accounts');const rows=targets.map(a=>({id:crypto.randomUUID(),memberId:a.memberId,telegramId:a.telegramId,title,message,createdAt:new Date().toISOString(),read:false}));writeList('notifications',[...rows,...readList('notifications')].slice(0,5000));writeAuditLog('member_notification_created',{memberId:memberId||'all',count:rows.length,title});res.json({ok:true,count:rows.length});});
 app.post('/api/admin/training-sessions',requireAdmin,(req,res)=>{const title=String(req.body.title||'').trim().slice(0,120),date=String(req.body.date||'').slice(0,30),location=String(req.body.location||'').slice(0,200);if(!title||!date)return res.status(400).json({error:'Title and date are required.'});const sessions=readList('training');const item={id:crypto.randomUUID(),title,date,location,notes:String(req.body.notes||'').slice(0,1000),active:true,createdAt:new Date().toISOString()};sessions.unshift(item);writeList('training',sessions);writeAuditLog('training_session_created',{sessionId:item.id,title,date});res.json({ok:true,session:item});});
 app.post('/api/admin/training-sessions/:id/attendance',requireAdmin,(req,res)=>{const session=readList('training').find(x=>x.id===req.params.id);if(!session)return res.status(404).json({error:'Training session not found.'});const memberId=String(req.body.memberId||'');const member=readData().members.find(m=>String(m.id)===memberId&&m.active!==false);if(!member)return res.status(400).json({error:'Select a valid member.'});const rows=readList('attendance').filter(x=>!(x.sessionId===session.id&&String(x.memberId)===memberId));rows.push({id:crypto.randomUUID(),sessionId:session.id,memberId,memberName:member.name,status:req.body.present===false?'absent':'present',recordedAt:new Date().toISOString(),recordedBy:ADMIN_USER});writeList('attendance',rows);writeAuditLog('training_attendance_recorded',{sessionId:session.id,memberId,memberName:member.name,status:rows[rows.length-1].status});res.json({ok:true});});
 app.post('/api/admin/member-accounts/:telegramId/resend',requireAdmin,async(req,res)=>{const account=readList('accounts').find(a=>String(a.telegramId)===String(req.params.telegramId));if(!account)return res.status(404).json({error:'Account not found.'});const member=readData().members.find(m=>String(m.id)===String(account.memberId));if(!member)return res.status(404).json({error:'Member not found.'});const raw=crypto.randomBytes(24).toString('base64url'),now=Date.now(),tokens=readList('tokens').filter(t=>t.expiresAt>now&&!t.usedAt);tokens.push({id:crypto.randomUUID(),hash:crypto.createHash('sha256').update(raw).digest('hex'),memberId:String(member.id),createdAt:now,expiresAt:now+600000,createdBy:ADMIN_USER});writeList('tokens',tokens);const link=`https://t.me/${BOT_USERNAME}?start=${raw}`;const qr=await require('qrcode').toDataURL(link);res.json({ok:true,link,qr,expiresAt:new Date(now+600000).toISOString()});});
 
-app.use("/uploads", express.static(UPLOAD_DIR, { maxAge: "1d", immutable: true }));
+// The public site is a different origin, so photos must be allowed to load there.
+app.use("/uploads", (_req,res,next) => { res.setHeader("Cross-Origin-Resource-Policy", "same-site"); next(); }, express.static(UPLOAD_DIR, { maxAge: "1d", immutable: true }));
 app.use(express.static(path.join(__dirname, "public")));
 app.get("/", (_req,res) => res.redirect("/login.html"));
 app.use((err,_req,res,_next) => {
