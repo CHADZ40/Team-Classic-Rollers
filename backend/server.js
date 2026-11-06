@@ -20,6 +20,7 @@ const ADMIN_USER = process.env.ADMIN_USER || "admin";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 const SESSION_SECRET = process.env.SESSION_SECRET;
 const TOKEN_TTL_SECONDS = 8 * 60 * 60;
+const INTRO_CAPTION_MAX = 280;
 const TELEGRAM_API = (process.env.TELEGRAM_API_BASE || "https://api.telegram.org").replace(/\/$/, "");
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "";
 // Chats allowed to receive score alerts and approve them. Anyone in a listed group can approve.
@@ -88,8 +89,14 @@ const upload = multer({
   }
 });
 
+// Ready to fill in from the admin. Nobody shows on the website until they have a name.
+const STARTING_ROLES = ["Team Captain & Founder", "Team Manager & Founder", "Two-Handed Coach", "One-Handed Coach", "Advisor"];
 function readData() {
-  return JSON.parse(fs.readFileSync(DATA_FILE, "utf8"));
+  const data = JSON.parse(fs.readFileSync(DATA_FILE, "utf8"));
+  if (!Array.isArray(data.introductions)) {
+    data.introductions = STARTING_ROLES.map((role, i) => ({ id: `leader-${i + 1}`, name: "", role, caption: "", photo: "", memberId: "" }));
+  }
+  return data;
 }
 function writeData(data) {
   data.updatedAt = new Date().toISOString();
@@ -122,6 +129,7 @@ function publicData() {
   const data = readData();
   data.members = data.members.filter(m => m.active !== false).map(m => ({...cleanMember(m), bio: String(m.bio||""), achievements: Array.isArray(m.achievements)?m.achievements:[]}))
     .sort((a,b) => teamIndex(a.team)-teamIndex(b.team) || a.sortOrder-b.sortOrder);
+  data.introductions = data.introductions.filter(i => i.name);
   data.news = Array.isArray(data.news) ? data.news.filter(n => n.published !== false).sort((a,b)=>String(b.date||b.createdAt||"").localeCompare(String(a.date||a.createdAt||""))) : [];
   return data;
 }
@@ -413,6 +421,63 @@ app.patch("/api/admin/members/:id", requireAdmin, upload.single("photo"), (req,r
   res.json({ ok:true, member });
 });
 
+// The leaders introduced on the home page. Separate from the roster, because an advisor
+// or coach may not be a bowler. A leader can link to a roster player to show their stats.
+function cleanIntroFields(body, data, item) {
+  if (typeof body.name === "string") item.name = body.name.trim().slice(0, 100);
+  if (typeof body.role === "string") item.role = body.role.trim().slice(0, 80);
+  if (typeof body.caption === "string") item.caption = body.caption.trim().slice(0, INTRO_CAPTION_MAX);
+  if (typeof body.memberId === "string") item.memberId = data.members.some(m => m.id === body.memberId && m.active !== false) ? body.memberId : "";
+}
+function deleteUpload(photo) {
+  if (!photo?.startsWith("/uploads/")) return;
+  fs.rm(path.join(UPLOAD_DIR, path.basename(photo)), { force: true }, error => { if (error) console.error("Failed to delete old photo:", error.message); });
+}
+app.post("/api/admin/introductions", requireAdmin, upload.single("photo"), (req,res) => {
+  const data = readData();
+  const item = { id: crypto.randomUUID(), name: "", role: "", caption: "", photo: "", memberId: "" };
+  cleanIntroFields(req.body, data, item);
+  if (!item.name || !item.role) { if (req.file) fs.unlinkSync(req.file.path); return res.status(400).json({ error: "Enter a name and a role." }); }
+  if (req.file) item.photo = `/uploads/${path.basename(req.file.path)}`;
+  data.introductions.push(item);
+  writeData(data);
+  writeAuditLog("introduction_added", { details: `${item.name}, ${item.role}` });
+  res.status(201).json({ ok: true, introductions: data.introductions });
+});
+app.post("/api/admin/introductions/order", requireAdmin, (req,res) => {
+  const data = readData();
+  const ids = Array.isArray(req.body.ids) ? req.body.ids.map(String) : [];
+  const position = id => { const i = ids.indexOf(id); return i < 0 ? ids.length : i; };
+  data.introductions.sort((a,b) => position(a.id) - position(b.id));
+  writeData(data);
+  writeAuditLog("introductions_reordered", { details: data.introductions.map(i => i.name || i.role).join(", ") });
+  res.json({ ok: true, introductions: data.introductions });
+});
+app.patch("/api/admin/introductions/:id", requireAdmin, upload.single("photo"), (req,res) => {
+  const data = readData();
+  const item = data.introductions.find(i => i.id === req.params.id);
+  if (!item) { if (req.file) fs.unlinkSync(req.file.path); return res.status(404).json({ error: "That person was already removed." }); }
+  const previousPhoto = item.photo;
+  cleanIntroFields(req.body, data, item);
+  if (!item.role) { if (req.file) fs.unlinkSync(req.file.path); return res.status(400).json({ error: "Enter a role." }); }
+  if (req.file) item.photo = `/uploads/${path.basename(req.file.path)}`;
+  else if (req.body.removePhoto === true || req.body.removePhoto === "true") item.photo = "";
+  writeData(data);
+  if (previousPhoto !== item.photo) deleteUpload(previousPhoto);
+  writeAuditLog("introduction_updated", { details: `${item.name || "No name yet"}, ${item.role}` });
+  res.json({ ok: true, introductions: data.introductions });
+});
+app.delete("/api/admin/introductions/:id", requireAdmin, (req,res) => {
+  const data = readData();
+  const item = data.introductions.find(i => i.id === req.params.id);
+  if (!item) return res.status(404).json({ error: "That person was already removed." });
+  data.introductions = data.introductions.filter(i => i.id !== item.id);
+  writeData(data);
+  deleteUpload(item.photo);
+  writeAuditLog("introduction_removed", { details: `${item.name || "No name yet"}, ${item.role}` });
+  res.json({ ok: true, introductions: data.introductions });
+});
+
 app.post("/api/admin/members/:id/adjust", requireAdmin, (req,res) => {
   const data = readData();
   const member = data.members.find(m => m.id === req.params.id);
@@ -531,7 +596,7 @@ app.use("/uploads", (_req,res,next) => { res.setHeader("Cross-Origin-Resource-Po
 // The admin is a React app built into admin-dist. Bundled files have unique names, so they
 // can be cached for good; the page itself is always rechecked so it finds the newest ones.
 const ADMIN_DIST = path.join(__dirname, "admin-dist");
-const ADMIN_PAGES = ["/login","/dashboard","/request","/players","/news","/content","/member-accounts","/logs",
+const ADMIN_PAGES = ["/login","/dashboard","/request","/players","/introductions","/news","/content","/member-accounts","/logs",
   "/login.html","/dashboard.html","/players.html","/news.html","/content.html","/member-accounts.html","/request.html","/logs.html"];
 app.use("/admin-static", express.static(path.join(ADMIN_DIST, "admin-static"), { maxAge: "1y", immutable: true }));
 app.get(ADMIN_PAGES, (_req,res) => {

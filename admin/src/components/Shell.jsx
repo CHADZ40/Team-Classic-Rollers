@@ -13,6 +13,7 @@ const NAV = [
   { to: "/request", label: "Score requests", short: "Requests", path: "M4 5h16v14H4zM8 12l3 3 5-6" },
   { to: "/players", label: "Players", path: "M9 11.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM2.5 20c.6-3.6 3.2-5.6 6.5-5.6s5.9 2 6.5 5.6M15.5 4.8a3.5 3.5 0 0 1 0 6.4M18 14.8c2 .7 3.2 2.5 3.5 5.2" },
   { to: "/news", label: "News", path: "M4 5h13v14H4zM17 9h3v8a2 2 0 0 1-2 2M7 9h7M7 13h7" },
+  { to: "/introductions", label: "Leaders", more: true, path: "M4 5h16v14H4zM8.500 11a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM4 17l5-4 3 2.500 3.500-3.500 4.500 4" },
   { to: "/content", label: "Website text", more: true, path: "M4 6h16M4 12h16M4 18h10" },
   { to: "/member-accounts", label: "Member accounts", more: true, path: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c.8-4 4-6 8-6s7.2 2 8 6" },
   { to: "/logs", label: "Activity", more: true, path: "M12 7v5l3 2M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z" },

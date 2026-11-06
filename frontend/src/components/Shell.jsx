@@ -23,6 +23,8 @@ const ICONS = {
   plus: <><path d="M12 5v14" /><path d="M5 12h14" /></>,
   arrow: <><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></>,
   search: <><circle cx="11" cy="11" r="7" /><path d="m20 20-3.800-3.800" /></>,
+  pause: <><path d="M9 5v14" /><path d="M15 5v14" /></>,
+  play: <path d="M7 4.500v15l12-7.500z" />,
   share: <><path d="M12 15V4" /><path d="m8 8 4-4 4 4" /><path d="M5 13v7h14v-7" /></>,
 };
 

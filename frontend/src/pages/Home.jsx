@@ -2,6 +2,7 @@ import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router";
 import { motion, useInView, useMotionValueEvent, useReducedMotion, useScroll, useTransform } from "motion/react";
 import { Counter, Lines, Magnetic, Marquee, Reveal, Tile } from "../components/motion.jsx";
+import MemberIntros from "../components/MemberIntros.jsx";
 import { Icon } from "../components/Shell.jsx";
 import { statusNote, useContent, useSiteData } from "../data/SiteData.jsx";
 import {
@@ -325,6 +326,7 @@ export default function Home() {
       <Ticker />
       <Scoreboard />
       <Squads />
+      <MemberIntros />
       <News />
       <Basics />
       <SubmitBand />

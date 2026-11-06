@@ -211,6 +211,22 @@ dialog.sheet { margin: 0 0 0 auto; width: min(560px, 100%); height: 100dvh; max-
 .danger-zone h3 { color: #ff9aa6; margin-bottom: 4px; }
 .danger-zone .btn-row { margin-top: 12px; }
 
+/* Introductions */
+.intro-cards { display: grid; gap: 12px; max-width: 860px; }
+.intro-card { display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 16px; padding: 14px; border-radius: 20px; background: var(--panel); border: 1px solid var(--hair); }
+.intro-preview { position: relative; align-self: start; aspect-ratio: 1; overflow: hidden; border-radius: 14px; background: var(--bg-2); }
+.intro-preview img { width: 100%; height: 100%; object-fit: contain; }
+.intro-preview .tag { position: absolute; left: 6px; bottom: 6px; background: rgba(5, 7, 15, .82); font-size: .72rem; }
+.intro-fields { display: grid; gap: 12px; align-content: start; min-width: 0; }
+.intro-save { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+.intro-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.intro-move { display: flex; gap: 6px; }
+.intro-move .btn { min-height: 38px; min-width: 42px; padding: 4px 12px; }
+@media (max-width: 520px) {
+  .intro-card { grid-template-columns: minmax(0, 1fr); }
+  .intro-preview { width: min(100%, 240px); }
+}
+
 /* Toast */
 .toast { position: fixed; z-index: 100; left: 50%; bottom: 24px; width: max-content; max-width: calc(100% - 24px); padding: 13px 20px; border-radius: 14px; background: #103b28; color: #a6f2c9; border: 1px solid rgba(69, 226, 141, .4); font-weight: 600; }
 .toast.is-error { background: #4a1420; color: #ffb3bd; border-color: rgba(255, 66, 88, .5); }

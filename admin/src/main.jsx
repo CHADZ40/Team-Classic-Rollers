@@ -15,6 +15,7 @@ import Home from "./pages/Home.jsx";
 
 const Requests = lazy(() => import("./pages/Requests.jsx"));
 const Players = lazy(() => import("./pages/Players.jsx"));
+const Introductions = lazy(() => import("./pages/Introductions.jsx"));
 const News = lazy(() => import("./pages/News.jsx"));
 const Content = lazy(() => import("./pages/Content.jsx"));
 const Accounts = lazy(() => import("./pages/Accounts.jsx"));
@@ -40,6 +41,7 @@ const router = createBrowserRouter([
           { path: "/dashboard", element: <Home /> },
           { path: "/request", element: page(Requests) },
           { path: "/players", element: page(Players) },
+          { path: "/introductions", element: page(Introductions) },
           { path: "/news", element: page(News) },
           { path: "/content", element: page(Content) },
           { path: "/member-accounts", element: page(Accounts) },

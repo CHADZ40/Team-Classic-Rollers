@@ -38,6 +38,17 @@ export const memberPath = (member) => `/members/${encodeURIComponent(member.slug
 export const niceName = (name) => String(name || "").toLowerCase().replace(/(^|[\s.-])\S/g, (c) => c.toUpperCase());
 export const formatNumber = (value) => Number(value || 0).toLocaleString("en-US");
 
+// The people introduced on the home page, in the order set in the admin. Anyone still
+// without a name is a role waiting to be filled in, so they stay off the site.
+export function leaderList(data) {
+  const members = activeMembers(data);
+  return (data.introductions || []).filter((leader) => leader.name).map((leader) => ({
+    ...leader, member: members.find((member) => member.id === leader.memberId) || null,
+  }));
+}
+export const leaderPicture = (leader) => (leader.photo ? fullPhoto(leader.photo) : leader.member ? posterPhoto(leader.member.photo) : "");
+export const leaderThumb = (leader) => (leader.photo ? fullPhoto(leader.photo) : leader.member ? thumbPhoto(leader.member.photo) : "");
+
 export function teamSummary(data, team) {
   const list = activeMembers(data).filter((member) => member.team === team).sort(bySortOrder);
   const games = list.reduce((sum, member) => sum + stats(member).games, 0);
