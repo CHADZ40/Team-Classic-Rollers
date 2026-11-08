@@ -1,7 +1,6 @@
 // Team data helpers shared across pages.
 
 export const API_BASE = import.meta.env.DEV ? "" : "https://admin.teamclassicrollers.club";
-export const PORTAL_URL = "https://admin.teamclassicrollers.club/member-portal.html";
 export const SOCIALS = [
   { label: "Facebook", href: "https://web.facebook.com/teamclassicrollers" },
   { label: "Instagram", href: "https://www.instagram.com/teamclassicrollers/" },

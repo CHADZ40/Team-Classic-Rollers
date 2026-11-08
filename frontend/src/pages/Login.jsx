@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router";
+import { Link, Navigate } from "react-router";
 import { AnimatePresence, motion } from "motion/react";
 import { Lines, Reveal, Tile } from "../components/motion.jsx";
 import { Icon } from "../components/Shell.jsx";
-import { API_BASE, PORTAL_URL, SOCIALS, niceName, stats, thumbPhoto } from "../lib/team.js";
+import { API_BASE, SOCIALS } from "../lib/team.js";
+import { useMemberSession } from "../data/MemberSession.jsx";
 import { Segments } from "./Team.jsx";
 
 const ADMIN_LOGIN_URL = "https://admin.teamclassicrollers.club/login.html";
@@ -16,21 +17,6 @@ const PERKS = [
   ["Notifications", "Messages from the team, sent to you."],
   ["Training", "See sessions and your attendance."],
 ];
-
-// Is this browser already signed in? The session cookie belongs to the admin
-// domain, so ask it. Any failure simply means showing the sign-in steps.
-function useMemberSession() {
-  const [member, setMember] = useState(null);
-  useEffect(() => {
-    let cancelled = false;
-    fetch(`${API_BASE}/api/member/me`, { credentials: "include" })
-      .then((response) => (response.ok ? response.json() : null))
-      .then((json) => { if (!cancelled && json?.member) setMember(json.member); })
-      .catch(() => {});
-    return () => { cancelled = true; };
-  }, []);
-  return [member, setMember];
-}
 
 function useTelegramBot() {
   const [bot, setBot] = useState(null);
@@ -57,33 +43,6 @@ function CopyCommand() {
   return <button type="button" className="cmd" onClick={copy} aria-label="Copy the /login command">{copied ? "Copied" : "/login"}</button>;
 }
 
-function Welcome({ member, onSignedOut }) {
-  const [busy, setBusy] = useState(false);
-  const signOut = async () => {
-    setBusy(true);
-    try {
-      await fetch(`${API_BASE}/api/member/logout`, { method: "POST", credentials: "include" });
-      onSignedOut();
-    } catch {
-      setBusy(false);
-    }
-  };
-  return (
-    <motion.div className="welcome" {...SWAP}>
-      <img src={thumbPhoto(member.photo)} alt="" />
-      <p className="label label--accent">You're signed in</p>
-      <h2>Welcome back, {niceName(member.name).split(" ")[0]}</h2>
-      <p className="dim">{member.team}</p>
-      <div className="welcome-stats">
-        <div><b>{member.games ?? 0}</b><span>Games</span></div>
-        <div><b>{stats(member).avg.toFixed(1)}</b><span>Average</span></div>
-      </div>
-      <a className="pill" href={PORTAL_URL}>Open my portal <Icon name="arrow" /></a>
-      <button type="button" className="text-button" onClick={signOut} disabled={busy}>{busy ? "Signing out…" : "Sign out"}</button>
-    </motion.div>
-  );
-}
-
 function SignInSteps({ bot }) {
   const [mode, setMode] = useState("returning");
   const telegram = bot ? `https://t.me/${bot}` : null;
@@ -102,7 +61,7 @@ function SignInSteps({ bot }) {
             <ol className="login-steps">
               <li><b>Open the TCR bot</b><span>{bot ? <>It's <strong>@{bot}</strong> on Telegram.</> : "Find it in your Telegram chats."}</span></li>
               <li><b>Send <CopyCommand /></b><span>The bot replies with your personal sign-in link.</span></li>
-              <li><b>Tap the link</b><span>It works once and lasts 5 minutes. You'll stay signed in for 30 days.</span></li>
+              <li><b>Tap the link</b><span>It works once and lasts 5 minutes. Choose to be remembered and you'll stay signed in while you keep visiting.</span></li>
             </ol>
             {telegram && <a className="pill" href={telegram} target="_blank" rel="noopener noreferrer">Open Telegram <Icon name="arrow" /></a>}
           </motion.div>
@@ -139,8 +98,10 @@ function Faq({ question, children }) {
 }
 
 export default function Login() {
-  const [member, setMember] = useMemberSession();
+  const { status } = useMemberSession();
   const bot = useTelegramBot();
+  // Already signed in: this page has nothing to do, so go straight to the portal.
+  if (status === "in") return <Navigate to="/portal" replace />;
   return (
     <>
       <section className="wrap login">
@@ -150,11 +111,7 @@ export default function Login() {
           <p className="lede">Your stats, your profile and team updates, all in one place. Sign in with Telegram, so there's no password to remember.</p>
         </div>
         <div className="login-card">
-          <AnimatePresence mode="wait">
-            {member
-              ? <Welcome key="welcome" member={member} onSignedOut={() => setMember(null)} />
-              : <SignInSteps key="steps" bot={bot} />}
-          </AnimatePresence>
+          <SignInSteps bot={bot} />
         </div>
       </section>
 

@@ -29,7 +29,7 @@ Team Classic Rollers is where the team trains, competes and keeps score. The sit
 | **Learn** | Bowling made simple: how scoring works, a tap-to-score calculator, first-game tips and a glossary |
 | **About** | The story and values behind the team |
 | **Submit a score** | Send in games and pins, with a photo of the lane screen as proof |
-| **Member sign-in** | Members sign in with Telegram to see their stats, profile, notifications and training |
+| **Member portal** | Members sign in with Telegram, and the menu switches to their name. Their portal shows their average, games, attendance, training days and progress towards the next squad |
 
 ## The squads
 

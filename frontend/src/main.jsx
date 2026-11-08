@@ -7,6 +7,7 @@ import "@fontsource-variable/jetbrains-mono";
 import "lenis/dist/lenis.css";
 import "./styles/site.css";
 import { SiteDataProvider } from "./data/SiteData.jsx";
+import { MemberSessionProvider } from "./data/MemberSession.jsx";
 import Shell from "./components/Shell.jsx";
 import Home from "./pages/Home.jsx";
 
@@ -17,6 +18,7 @@ const Learn = lazy(() => import("./pages/Learn.jsx"));
 const About = lazy(() => import("./pages/About.jsx"));
 const Submit = lazy(() => import("./pages/Submit.jsx"));
 const Login = lazy(() => import("./pages/Login.jsx"));
+const Portal = lazy(() => import("./pages/Portal.jsx"));
 const NotFound = lazy(() => import("./pages/NotFound.jsx"));
 
 const page = (Component) => <Suspense fallback={<div className="page-loading" />}><Component /></Suspense>;
@@ -48,7 +50,8 @@ const router = createBrowserRouter([
       { path: "/about", element: page(About) },
       { path: "/submit", element: page(Submit) },
       { path: "/login", element: page(Login) },
-      { path: "/member-portal.html", element: <Navigate to="/login" replace /> },
+      { path: "/portal", element: page(Portal) },
+      { path: "/member-portal.html", element: <Navigate to="/portal" replace /> },
       { path: "/members/:id", element: <MemberRoute /> },
       { path: "/index.html", element: <Navigate to="/" replace /> },
       { path: "/team.html", element: <LegacyTeam /> },
@@ -65,7 +68,9 @@ createRoot(document.getElementById("root")).render(
   <StrictMode>
     <MotionConfig reducedMotion="user">
       <SiteDataProvider>
-        <RouterProvider router={router} />
+        <MemberSessionProvider>
+          <RouterProvider router={router} />
+        </MemberSessionProvider>
       </SiteDataProvider>
     </MotionConfig>
   </StrictMode>,
