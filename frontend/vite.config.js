@@ -11,6 +11,11 @@ const liveReadOnly = {
   bypass: (req) => (req.method === "GET" ? undefined : false),
 };
 
+// To try member sign-in and the portal against a local backend, set TCR_LOCAL_API,
+// e.g. http://127.0.0.1:3100. Everything then goes there, including writes.
+const LOCAL_API = process.env.TCR_LOCAL_API;
+const api = LOCAL_API ? { target: LOCAL_API, changeOrigin: true } : liveReadOnly;
+
 export default defineConfig({
   plugins: [react()],
   build: {
@@ -20,6 +25,6 @@ export default defineConfig({
   },
   server: {
     fs: { allow: [".."] },
-    proxy: { "/api": liveReadOnly, "/uploads": liveReadOnly },
+    proxy: { "/api": api, "/uploads": api },
   },
 });

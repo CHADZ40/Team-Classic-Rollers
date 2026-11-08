@@ -34,11 +34,11 @@ for (const [path, meta] of Object.entries(PAGES)) {
   const html = page(path, meta);
   if (path === "/") { write("index.html", html); count += 1; continue; }
   write(`${path.slice(1)}/index.html`, html);
-  if (path !== "/submit" && path !== "/login") write(`${path.slice(1)}.html`, html);
+  if (path !== "/submit" && path !== "/login" && path !== "/portal") write(`${path.slice(1)}.html`, html);
   count += 1;
 }
 write("member.html", page("/team", PAGES["/team"]));
-write("member-portal.html", page("/login", PAGES["/login"]));
+write("member-portal.html", page("/portal", PAGES["/portal"]));
 for (const member of seed.members) {
   const html = page(`/members/${member.slug}`, memberMeta(member.name, member.team));
   write(`members/${member.slug}/index.html`, html);

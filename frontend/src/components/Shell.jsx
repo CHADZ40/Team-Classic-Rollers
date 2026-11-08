@@ -3,7 +3,8 @@ import { useEffect, useLayoutEffect, useRef } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router";
 import { motion, useReducedMotion, useScroll, useSpring, useTransform } from "motion/react";
 import Lenis from "lenis";
-import { SOCIALS } from "../lib/team.js";
+import { SOCIALS, niceName, thumbPhoto } from "../lib/team.js";
+import { useMemberSession } from "../data/MemberSession.jsx";
 import { PAGES } from "../data/routes.js";
 import { Magnetic } from "./motion.jsx";
 
@@ -77,6 +78,20 @@ function ScrollManager({ lenis }) {
   return null;
 }
 
+// Signed-in members see their own photo and name here, which opens their portal.
+function MemberLink() {
+  const { status, me } = useMemberSession();
+  if (status !== "in") return <Link to="/login" viewTransition className="nav-portal">Sign in</Link>;
+  const { member } = me;
+  const first = niceName(member.profile?.name || member.name).split(" ")[0];
+  return (
+    <Link to="/portal" viewTransition className="nav-me" aria-label={`${first}'s portal`}>
+      <img src={thumbPhoto(member.profile?.photo || member.photo)} alt="" onError={(event) => { event.currentTarget.src = "/assets/member-placeholder.svg"; }} />
+      <span>{first}</span>
+    </Link>
+  );
+}
+
 function Nav() {
   const { scrollY } = useScroll();
   const shadow = useTransform(scrollY, [0, 120], ["rgba(255,255,255,.05)", "rgba(255,255,255,.14)"]);
@@ -105,7 +120,7 @@ function Nav() {
             </NavLink>
           ))}
         </div>
-        <Link to="/login" viewTransition className="nav-portal">Sign in</Link>
+        <MemberLink />
         <Magnetic>
           <Link to="/submit" viewTransition className="pill pill--sm nav-cta">Submit a score</Link>
         </Magnetic>
@@ -135,6 +150,7 @@ function Dock() {
 
 function Footer() {
   const ref = useRef(null);
+  const { status } = useMemberSession();
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end end"] });
   const y = useSpring(useTransform(scrollYProgress, [0, 1], ["40%", "0%"]), { stiffness: 90, damping: 24 });
   return (
@@ -151,7 +167,7 @@ function Footer() {
           <div>
             <p className="label">Members</p>
             <Link to="/submit" viewTransition>Submit a score</Link>
-            <Link to="/login" viewTransition>Member sign in</Link>
+            {status === "in" ? <Link to="/portal" viewTransition>My portal</Link> : <Link to="/login" viewTransition>Member sign in</Link>}
           </div>
           <div>
             <p className="label">Follow</p>

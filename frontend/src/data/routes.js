@@ -26,6 +26,10 @@ export const PAGES = {
     title: "Member Sign In | Team Classic Rollers",
     description: "Team Classic Rollers members sign in with Telegram to see their stats, profile, notifications and training.",
   },
+  "/portal": {
+    title: "My Portal | Team Classic Rollers",
+    description: "Your games, average, training attendance and progress towards the next squad.",
+  },
   "/submit": {
     title: "Submit a Score | Team Classic Rollers",
     description: "Team Classic Rollers members: send in your games and total pins for admin review.",
