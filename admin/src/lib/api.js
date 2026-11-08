@@ -1,24 +1,30 @@
 // Talks to the backend and holds the small helpers shared across pages.
-const TOKEN_KEY = "tcrAdminToken";
-export const getToken = () => sessionStorage.getItem(TOKEN_KEY) || "";
-export const setToken = (token) => sessionStorage.setItem(TOKEN_KEY, token);
-export const clearToken = () => sessionStorage.removeItem(TOKEN_KEY);
-
+// Signing in sets a cookie the browser keeps for 30 days. Scripts can't read it, so it
+// can't be stolen from the page. Every request just sends it along.
 export async function api(url, options = {}) {
-  const opts = { ...options, credentials: "include", headers: { ...(options.headers || {}), Authorization: `Bearer ${getToken()}` } };
-  if (opts.body && !(opts.body instanceof FormData) && typeof opts.body !== "string") {
+  const opts = { ...options, credentials: "include", headers: { ...(options.headers || {}) } };
+  if (opts.body && !(opts.body instanceof FormData) && !(opts.body instanceof Blob) && typeof opts.body !== "string") {
     opts.headers["Content-Type"] = "application/json";
     opts.body = JSON.stringify(opts.body);
   }
   const response = await fetch(url, opts);
   if (response.status === 401) {
-    clearToken();
     window.location.replace("/login");
     throw new Error("Please sign in again.");
   }
   const json = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(json.error || "That didn't work. Please try again.");
   return json;
+}
+
+// True when this browser is still signed in. Also renews the sign-in.
+export async function hasSession() {
+  try {
+    const response = await fetch("/api/admin/session", { credentials: "include" });
+    return response.ok;
+  } catch {
+    return false;
+  }
 }
 
 export const memberUrl = (id) => `/api/admin/members/${encodeURIComponent(id)}`;
@@ -65,6 +71,8 @@ export const ACTION_LABELS = {
   game_request_submitted: "Score request sent", game_request_approved: "Score request approved", game_request_rejected: "Score request rejected",
   score_added: "Pins added", score_removed: "Pins removed", games_adjusted: "Games changed", member_stats_set: "Stats corrected", member_stats_reset: "Stats reset",
   member_added: "Player added", member_removed: "Player removed", member_updated: "Player updated", introduction_added: "Leader added", introduction_updated: "Leader updated", introduction_removed: "Leader removed", introductions_reordered: "Leaders reordered", website_content_updated: "Website text updated",
+  member_notification_created: "Message sent to members", training_session_created: "Session opened", training_session_opened: "Session reopened", training_session_closed: "Session closed", training_session_deleted: "Session deleted",
+  training_attendance_recorded: "Attendance marked", training_attendance_undone: "Attendance undone", face_registered: "Face registered", face_removed: "Face data deleted",
   news_published: "News published", news_updated: "News updated", news_deleted: "News deleted",
 };
 export const actionLabel = (action) => ACTION_LABELS[action] || String(action || "").replaceAll("_", " ");
