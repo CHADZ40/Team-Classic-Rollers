@@ -43,6 +43,7 @@ Everything on the site is managed from a private admin dashboard, with no code i
 
 - **Scores:** review submitted scores and approve or reject them, on the dashboard or straight from Telegram
 - **Players:** add bowlers, update photos and bios, and correct stats
+- **Attendance:** open training sessions and check members in by face or by hand
 - **Leaders:** add, edit, remove and reorder the people introduced on the home page, each with a role, picture and caption
 - **News:** publish announcements, tournaments and results
 - **Website text:** change the wording on the Home and About pages
@@ -57,6 +58,7 @@ Everything on the site is managed from a private admin dashboard, with no code i
 | **3D and motion** | Three.js, React Three Fiber, Motion, Lenis |
 | **Backend** | Node.js, Express |
 | **Member sign-in and score alerts** | Telegram bot |
+| **Face check-in** | Python, OpenCV (YuNet and SFace). See [the setup guide](backend/face-service/README.md) |
 
 The site works on phones as well as it does on desktop, because that's what people have in their hands at the lanes. It also respects each visitor's reduced-motion setting.
 

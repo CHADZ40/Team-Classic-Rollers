@@ -7,6 +7,7 @@ const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
+const { registerAttendance, FRAME_ROUTES } = require("./attendance");
 
 const app = express();
 const PORT = Number(process.env.PORT || 3100);
@@ -19,7 +20,9 @@ const PUBLIC_SITE_ORIGIN = (process.env.PUBLIC_SITE_ORIGIN || "https://teamclass
 const ADMIN_USER = process.env.ADMIN_USER || "admin";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 const SESSION_SECRET = process.env.SESSION_SECRET;
-const TOKEN_TTL_SECONDS = 8 * 60 * 60;
+// Admins stay signed in for 30 days, renewed each time the admin opens. Changing
+// SESSION_SECRET signs every browser out.
+const TOKEN_TTL_SECONDS = 30 * 24 * 60 * 60;
 const INTRO_CAPTION_MAX = 280;
 const TELEGRAM_API = (process.env.TELEGRAM_API_BASE || "https://api.telegram.org").replace(/\/$/, "");
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "";
@@ -63,11 +66,12 @@ app.use((req, res, next) => {
 
 // Cloudflare sits in front, so count each visitor by their real address. Otherwise everyone
 // arriving through the same Cloudflare server shares one limit. The bot's calls are already
-// protected by a secret and must keep working during a busy spell.
+// protected by a secret and must keep working during a busy spell. Camera frames for attendance
+// have their own limit in attendance.js.
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, limit: 300, standardHeaders: "draft-7", legacyHeaders: false,
   keyGenerator: req => String(req.headers["cf-connecting-ip"] || req.ip),
-  skip: req => req.path.startsWith("/internal/"),
+  skip: req => req.path.startsWith("/internal/") || FRAME_ROUTES.test(req.path),
   message: { error: "Too many requests right now. Please wait a few minutes and try again." },
   validate: { xForwardedForHeader: false },
 });
@@ -152,13 +156,16 @@ function verifyToken(token) {
     return body.sub === ADMIN_USER && body.exp > Math.floor(Date.now()/1000);
   } catch { return false; }
 }
+// The sign-in lives in a cookie that page scripts can't read. Browsers say where each request
+// came from, so a request started by any other site, even the public one, is turned away.
 function requireAdmin(req, res, next) {
-  const token = req.headers.authorization?.startsWith("Bearer ")
-    ? req.headers.authorization.slice(7)
-    : req.cookies?.tcr_admin;
-  if (!verifyToken(token)) return res.status(401).json({ error: "Please log in again." });
+  const from = req.headers["sec-fetch-site"];
+  if (from && from !== "same-origin") return res.status(403).json({ error: "Open the admin directly to do this." });
+  if (!verifyToken(req.cookies?.tcr_admin)) return res.status(401).json({ error: "Please log in again." });
   next();
 }
+const ADMIN_COOKIE = { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "Strict", path: "/" };
+const setAdminCookie = (res) => res.cookie("tcr_admin", makeToken(ADMIN_USER), { ...ADMIN_COOKIE, maxAge: TOKEN_TTL_SECONDS * 1000 });
 
 // Minimal cookie parser for the signed admin token.
 app.use((req, _res, next) => {
@@ -330,12 +337,17 @@ app.post("/api/admin/login", async (req,res) => {
   const valid = sameUser && typeof password === "string" &&
     (await bcrypt.compare(password, process.env.ADMIN_PASSWORD_HASH || await bcrypt.hash(ADMIN_PASSWORD, 10)));
   if (!valid) return res.status(401).json({ error: "Incorrect username or password." });
-  const token = makeToken(ADMIN_USER);
-  res.cookie("tcr_admin", token, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "Strict", maxAge: TOKEN_TTL_SECONDS * 1000, path: "/" });
-  res.json({ ok: true, username: ADMIN_USER, token });
+  setAdminCookie(res);
+  res.json({ ok: true, username: ADMIN_USER });
+});
+// The admin calls this when it opens, which also renews the 30 days.
+app.get("/api/admin/session", requireAdmin, (_req,res) => {
+  setAdminCookie(res);
+  res.set("Cache-Control", "no-store");
+  res.json({ ok: true, username: ADMIN_USER });
 });
 app.post("/api/admin/logout", (_req,res) => {
-  res.clearCookie("tcr_admin", { path: "/" });
+  res.clearCookie("tcr_admin", ADMIN_COOKIE);
   res.json({ ok: true });
 });
 app.get("/api/admin/site-data", requireAdmin, (_req,res) => res.json(readData()));
@@ -521,6 +533,7 @@ app.delete("/api/admin/members/:id", requireAdmin, (req,res) => {
   if (!member) return res.status(404).json({error:"Member not found."});
   member.active = false;
   writeData(data);
+  attendance.removeFaces(member.id);
   writeAuditLog("member_removed", { memberId: member.id, memberName: member.name, team: member.team });
   res.json({ok:true});
 });
@@ -535,6 +548,7 @@ const MEMBER_FILES = {
  sessions: path.join(MEMBER_DIR, 'member-sessions.json'),
  training: path.join(MEMBER_DIR, 'training-sessions.json'),
  attendance: path.join(MEMBER_DIR, 'training-attendance.json'),
+ faces: path.join(MEMBER_DIR, 'face-embeddings.json'),
  changes: path.join(MEMBER_DIR, 'member-profile-changes.json'),
  audit: path.join(MEMBER_DIR, 'member-audit-log.json'),
  events: path.join(MEMBER_DIR, 'score-request-events.json'),
@@ -578,17 +592,55 @@ app.post('/api/member/browser-login',(req,res)=>{
  res.json({ok:true});
 });
 app.post('/api/member/logout',(req,res)=>{
+ const cookie=(req.headers.cookie||'').split(';').map(v=>v.trim()).find(v=>v.startsWith('tcr_member='));
+ if(cookie){const hash=crypto.createHash('sha256').update(decodeURIComponent(cookie.slice('tcr_member='.length))).digest('hex');writeList('sessions',readList('sessions').filter(x=>x.hash!==hash));}
  res.setHeader('Set-Cookie','tcr_member=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0');
  res.json({ok:true});
 });
 app.post('/api/member/session',memberAuth,(req,res)=>res.json({ok:true,account:safeAccount(req.memberAccount)}));
-app.get('/api/member/me',memberAuth,(req,res)=>{const data=readData();const m=data.members.find(x=>String(x.id)===String(req.memberAccount.memberId));if(!m)return res.status(404).json({error:'Member profile not found.'});const games=Number(m.games)||0,scores=Number(m.scores)||0;res.json({account:safeAccount(req.memberAccount),member:{...cleanMember(m),average:games?Math.round(scores/games):0,profile:req.memberAccount.profile||{}},notifications:readList('notifications').filter(n=>String(n.memberId)===String(m.id)).slice(0,100),attendance:readList('attendance').filter(a=>String(a.memberId)===String(m.id)).slice(0,100),training:readList('training').filter(t=>t.active!==false).slice(0,100)});});
+// Training is every Monday, Wednesday and Friday (0 is Sunday). The member portal shows these.
+const TRAINING_DAYS = [1, 3, 5];
+// A member's sessions, newest first, with only what they need to see. How they were matched
+// stays with the admins. Counting starts at their first session, so the weeks before they
+// joined don't count against them.
+function memberAttendance(memberId) {
+  const rows = new Map(readList('attendance').filter(a => String(a.memberId) === String(memberId)).map(a => [a.sessionId, a]));
+  const sessions = readList('training').filter(t => t.active !== false)
+    .sort((a, b) => String(b.date).localeCompare(String(a.date)) || String(b.createdAt).localeCompare(String(a.createdAt)));
+  const firstDate = sessions.filter(t => rows.has(t.id)).map(t => String(t.date)).sort()[0];
+  const list = sessions
+    .map(t => { const row = rows.get(t.id); return { id: t.id, title: t.title, date: t.date, location: t.location || '', status: row ? row.status : t.open === true ? 'open' : 'missed' }; })
+    .filter(t => t.status === 'open' || (firstDate && String(t.date) >= firstDate));
+  const counted = list.filter(t => t.status !== 'open');
+  return { present: counted.filter(t => t.status === 'present').length, total: counted.length, sessions: list.slice(0, 100) };
+}
+// A member's games from the activity log, newest first. When an admin adds games and pins
+// for the same visit, the two log entries become one line.
+const GAME_ACTIONS = new Set(['game_request_approved', 'score_added', 'score_removed', 'games_adjusted', 'member_stats_set']);
+function memberGames(memberId) {
+  let logs = [];
+  try { logs = JSON.parse(fs.readFileSync(LOG_FILE, 'utf8')); } catch { return []; }
+  const rows = [];
+  for (const l of logs.filter(l => String(l.memberId) === String(memberId) && GAME_ACTIONS.has(l.action)).reverse()) {
+    if (l.action === 'game_request_approved') { rows.push({ at: l.timestamp, kind: 'approved', games: l.gamesAdded, pins: l.scoresAdded, note: l.reason || '' }); continue; }
+    if (l.action === 'member_stats_set') { rows.push({ at: l.timestamp, kind: 'corrected', games: l.games, pins: l.scores }); continue; }
+    const field = l.action === 'games_adjusted' ? 'games' : 'pins';
+    const last = rows[rows.length - 1];
+    if (last && last.kind === 'added' && last[field] === undefined && Math.abs(Date.parse(l.timestamp) - Date.parse(last.at)) < 60000) {
+      last[field] = l.amount;
+      if (l.reason && !last.note) last.note = l.reason;
+      continue;
+    }
+    rows.push({ at: l.timestamp, kind: 'added', [field]: l.amount, note: l.reason || '' });
+  }
+  return rows.reverse().slice(0, 100);
+}
+app.get('/api/member/me',memberAuth,(req,res)=>{const data=readData();const m=data.members.find(x=>String(x.id)===String(req.memberAccount.memberId));if(!m)return res.status(404).json({error:'Member profile not found.'});const games=Number(m.games)||0,scores=Number(m.scores)||0;res.json({account:safeAccount(req.memberAccount),member:{...cleanMember(m),average:games?Math.round(scores/games):0,profile:req.memberAccount.profile||{}},notifications:readList('notifications').filter(n=>String(n.memberId)===String(m.id)).slice(0,100),attendance:memberAttendance(m.id),games:memberGames(m.id),schedule:{days:TRAINING_DAYS}});});
 app.patch('/api/member/profile',memberAuth,upload.single('photo'),(req,res)=>{const accounts=readList('accounts');const a=accounts.find(x=>String(x.telegramId)===String(req.memberAccount.telegramId));if(!a)return res.status(404).json({error:'Account not found.'});const before={...(a.profile||{})};const allowed=['name','phone','dateOfBirth','gender','cityProvince'];a.profile=a.profile||{};for(const k of allowed)if(typeof req.body[k]==='string')a.profile[k]=req.body[k].trim().slice(0,120);if(req.file)a.profile.photo='/uploads/'+path.basename(req.file.path);writeList('accounts',accounts);writeList('changes',[{id:crypto.randomUUID(),memberId:a.memberId,telegramId:a.telegramId,before,after:a.profile,createdAt:new Date().toISOString()},...readList('changes')].slice(0,5000));writeAuditLog('member_profile_self_updated',{memberId:a.memberId,telegramId:a.telegramId});res.json({ok:true,profile:a.profile});});
 app.post('/api/member/score-requests',memberAuth,upload.array('proofs',6),(req,res)=>{const games=Math.floor(Number(req.body.games)),scores=Math.floor(Number(req.body.scores));if(!Number.isInteger(games)||games<1||games>100||!Number.isInteger(scores)||scores<0||scores>100000)return res.status(400).json({error:'Enter valid games and total score.'});const data=readData();const member=data.members.find(m=>String(m.id)===String(req.memberAccount.memberId));const item={id:crypto.randomUUID(),name:member?.name||'Member',telegramId:req.memberAccount.telegramId,memberId:req.memberAccount.memberId,games,scores,notes:String(req.body.notes||'').slice(0,500),proofs:(req.files||[]).map(f=>'/uploads/'+path.basename(f.path)),status:'pending',createdAt:new Date().toISOString(),source:'member-portal'};const requests=readRequests();requests.unshift(item);writeRequests(requests);writeList('events',[{id:crypto.randomUUID(),requestId:item.id,memberId:item.memberId,event:'submitted',at:item.createdAt},...readList('events')].slice(0,5000));writeAuditLog('member_portal_score_request_submitted',{requestId:item.id,memberId:item.memberId,games,scores});notifyAdminsOfRequest(item).catch(error=>console.error('Telegram alert failed:',error.message));res.json({ok:true,request:item});});
 app.get('/api/member/score-requests',memberAuth,(req,res)=>res.json({requests:readRequests().filter(r=>String(r.memberId)===String(req.memberAccount.memberId)).map(r=>({id:r.id,games:r.games,scores:r.scores,status:r.status,createdAt:r.createdAt,reviewedAt:r.reviewedAt,reviewReason:r.reviewReason}))}));
 app.post('/api/admin/member-notifications',requireAdmin,(req,res)=>{const memberId=String(req.body.memberId||'');const title=String(req.body.title||'').trim().slice(0,120),message=String(req.body.message||'').trim().slice(0,2000);if(!title||!message)return res.status(400).json({error:'Title and message are required.'});const targets=memberId?readList('accounts').filter(a=>String(a.memberId)===memberId):readList('accounts');const rows=targets.map(a=>({id:crypto.randomUUID(),memberId:a.memberId,telegramId:a.telegramId,title,message,createdAt:new Date().toISOString(),read:false}));writeList('notifications',[...rows,...readList('notifications')].slice(0,5000));writeAuditLog('member_notification_created',{memberId:memberId||'all',count:rows.length,title});res.json({ok:true,count:rows.length});});
-app.post('/api/admin/training-sessions',requireAdmin,(req,res)=>{const title=String(req.body.title||'').trim().slice(0,120),date=String(req.body.date||'').slice(0,30),location=String(req.body.location||'').slice(0,200);if(!title||!date)return res.status(400).json({error:'Title and date are required.'});const sessions=readList('training');const item={id:crypto.randomUUID(),title,date,location,notes:String(req.body.notes||'').slice(0,1000),active:true,createdAt:new Date().toISOString()};sessions.unshift(item);writeList('training',sessions);writeAuditLog('training_session_created',{sessionId:item.id,title,date});res.json({ok:true,session:item});});
-app.post('/api/admin/training-sessions/:id/attendance',requireAdmin,(req,res)=>{const session=readList('training').find(x=>x.id===req.params.id);if(!session)return res.status(404).json({error:'Training session not found.'});const memberId=String(req.body.memberId||'');const member=readData().members.find(m=>String(m.id)===memberId&&m.active!==false);if(!member)return res.status(400).json({error:'Select a valid member.'});const rows=readList('attendance').filter(x=>!(x.sessionId===session.id&&String(x.memberId)===memberId));rows.push({id:crypto.randomUUID(),sessionId:session.id,memberId,memberName:member.name,status:req.body.present===false?'absent':'present',recordedAt:new Date().toISOString(),recordedBy:ADMIN_USER});writeList('attendance',rows);writeAuditLog('training_attendance_recorded',{sessionId:session.id,memberId,memberName:member.name,status:rows[rows.length-1].status});res.json({ok:true});});
+const attendance = registerAttendance(app, { requireAdmin, readList, writeList, readData, writeAuditLog, adminUser: ADMIN_USER, photoDir: path.join(MEMBER_DIR, 'checkin-photos') });
 app.post('/api/admin/member-accounts/:telegramId/resend',requireAdmin,async(req,res)=>{const account=readList('accounts').find(a=>String(a.telegramId)===String(req.params.telegramId));if(!account)return res.status(404).json({error:'Account not found.'});const member=readData().members.find(m=>String(m.id)===String(account.memberId));if(!member)return res.status(404).json({error:'Member not found.'});const raw=crypto.randomBytes(24).toString('base64url'),now=Date.now(),tokens=readList('tokens').filter(t=>t.expiresAt>now&&!t.usedAt);tokens.push({id:crypto.randomUUID(),hash:crypto.createHash('sha256').update(raw).digest('hex'),memberId:String(member.id),createdAt:now,expiresAt:now+600000,createdBy:ADMIN_USER});writeList('tokens',tokens);const link=`https://t.me/${BOT_USERNAME}?start=${raw}`;const qr=await require('qrcode').toDataURL(link);res.json({ok:true,link,qr,expiresAt:new Date(now+600000).toISOString()});});
 
 // The public site is a different origin, so photos must be allowed to load there.
@@ -596,7 +648,7 @@ app.use("/uploads", (_req,res,next) => { res.setHeader("Cross-Origin-Resource-Po
 // The admin is a React app built into admin-dist. Bundled files have unique names, so they
 // can be cached for good; the page itself is always rechecked so it finds the newest ones.
 const ADMIN_DIST = path.join(__dirname, "admin-dist");
-const ADMIN_PAGES = ["/login","/dashboard","/request","/players","/introductions","/news","/content","/member-accounts","/logs",
+const ADMIN_PAGES = ["/login","/dashboard","/request","/players","/introductions","/attendance","/news","/content","/member-accounts","/logs",
   "/login.html","/dashboard.html","/players.html","/news.html","/content.html","/member-accounts.html","/request.html","/logs.html"];
 app.use("/admin-static", express.static(path.join(ADMIN_DIST, "admin-static"), { maxAge: "1y", immutable: true }));
 app.get(ADMIN_PAGES, (_req,res) => {

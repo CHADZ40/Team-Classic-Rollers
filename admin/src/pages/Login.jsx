@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { motion } from "motion/react";
-import { getToken, setToken } from "../lib/api.js";
+import { hasSession } from "../lib/api.js";
 import { EASE } from "../components/ui.jsx";
 
 export default function Login() {
@@ -13,7 +13,9 @@ export default function Login() {
 
   useEffect(() => {
     document.title = "Admin Sign In | Team Classic Rollers";
-    if (getToken()) navigate("/dashboard", { replace: true });
+    let live = true;
+    hasSession().then((ok) => { if (live && ok) navigate("/dashboard", { replace: true }); });
+    return () => { live = false; };
   }, [navigate]);
 
   const submit = async (event) => {
@@ -24,7 +26,6 @@ export default function Login() {
       const response = await fetch("/api/admin/login", { method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify({ username, password }) });
       const json = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(json.error || "Sign-in failed. Please try again.");
-      setToken(json.token);
       navigate("/dashboard", { replace: true, viewTransition: true });
     } catch (failure) {
       setError(failure.message);

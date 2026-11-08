@@ -4,255 +4,433 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>TCR Member Portal</title>
+  <meta name="robots" content="noindex">
+  <title>My Portal | Team Classic Rollers</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap">
   <style>
     :root {
-      --navy: #071a35;
-      --blue: #123d70;
-      --yellow: #f6c744;
-      --bg: #f4f7fb;
-      --ink: #15243a
+      color-scheme: dark;
+      --bg: #05070f;
+      --panel: rgba(255, 255, 255, .045);
+      --panel-2: rgba(255, 255, 255, .08);
+      --field: #0c1122;
+      --fg: #f4f5f8;
+      --dim: rgba(236, 239, 248, .68);
+      --hair: rgba(255, 255, 255, .11);
+      --line: rgba(255, 255, 255, .22);
+      --yellow: #ffd500;
+      --red: #ff4258;
+      --green: #45e28d;
+      --sky: #6d8dff;
     }
 
-    * {
-      box-sizing: border-box
-    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html { background: var(--bg); -webkit-text-size-adjust: 100%; }
+    body { margin: 0; min-height: 100dvh; color: var(--fg); font: 400 15px/1.5 Archivo, system-ui, -apple-system, "Segoe UI", sans-serif; background: radial-gradient(80% 380px at 85% -60px, #17389f 0%, transparent 62%), var(--bg); -webkit-font-smoothing: antialiased; }
+    h1, h2, h3, p { margin: 0; }
+    a { color: var(--yellow); text-underline-offset: 3px; }
+    button, input, select, textarea { font: inherit; color: inherit; }
+    :focus-visible { outline: 2px solid var(--yellow); outline-offset: 2px; }
+    [hidden] { display: none !important; }
 
-    body {
-      margin: 0;
-      background: var(--bg);
-      font: 16px system-ui;
-      color: var(--ink)
-    }
+    .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px max(16px, calc((100% - 960px) / 2)); border-bottom: 1px solid var(--hair); background: rgba(5, 7, 15, .7); backdrop-filter: blur(14px); position: sticky; top: 0; z-index: 5; }
+    .brand { display: flex; align-items: center; gap: 10px; color: var(--fg); text-decoration: none; }
+    .brand img { width: 64px; }
+    .brand span { font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; color: var(--dim); }
+    main { width: min(960px, 100% - 32px); margin: 24px auto 64px; }
 
-    header {
-      background: var(--navy);
-      color: #fff;
-      padding: 15px max(16px, calc((100% - 1000px)/2));
-      display: flex;
-      align-items: center;
-      gap: 12px
-    }
+    .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 8px 16px; border-radius: 999px; border: 1px solid transparent; background: var(--yellow); color: var(--bg); font-weight: 700; font-size: .9rem; cursor: pointer; text-decoration: none; }
+    .btn:hover { background: #fff; }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+    .btn.quiet { background: var(--panel-2); color: var(--fg); border-color: var(--line); }
+    .btn.quiet:hover { background: var(--fg); color: var(--bg); }
 
-    header img {
-      width: 62px;
-      height: 62px;
-      object-fit: contain
-    }
+    .card { padding: clamp(16px, 2.6vw, 22px); border-radius: 18px; background: var(--panel); border: 1px solid var(--hair); }
+    .card + .card, .grid + .card, .card + .grid { margin-top: 12px; }
+    .grid > .card { margin-top: 0; }
+    .card h2 { font-size: 1.02rem; font-weight: 700; margin-bottom: 10px; }
+    .grid { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    @media (max-width: 680px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+    .dim { color: var(--dim); }
+    .small { font-size: .86rem; }
+    .eyebrow { font-size: .7rem; letter-spacing: .12em; text-transform: uppercase; color: var(--yellow); font-weight: 600; }
+    .notice { margin-top: 12px; padding: 9px 13px; border-radius: 12px; background: rgba(255, 213, 0, .12); color: var(--yellow); font-size: .9rem; }
+    .notice:empty { display: none; }
 
-    main {
-      max-width: 1000px;
-      margin: 22px auto;
-      padding: 0 14px
-    }
+    .hello { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+    .avatar { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; background: var(--panel-2); flex: none; display: grid; place-items: center; font-weight: 800; font-size: 1.3rem; color: var(--yellow); }
+    .hello h1 { font-size: clamp(1.3rem, 3vw, 1.7rem); font-weight: 800; font-stretch: 112%; line-height: 1.1; text-transform: capitalize; }
+    .hello .grow { flex: 1 1 200px; min-width: 0; }
 
-    .card {
-      background: white;
-      border: 1px solid #e0e7f0;
-      border-radius: 15px;
-      padding: 18px;
-      margin-bottom: 15px;
-      box-shadow: 0 4px 18px #0a21400a
-    }
+    .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 16px; }
+    .stat { padding: 12px 14px; border-radius: 14px; background: var(--panel); border: 1px solid var(--hair); min-width: 0; }
+    .stat span { display: block; font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; color: var(--dim); }
+    .stat b { display: block; margin-top: 4px; font-size: 1.35rem; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; overflow-wrap: anywhere; }
+    .stat.accent { background: var(--yellow); color: var(--bg); border-color: transparent; }
+    .stat.accent span { color: rgba(5, 7, 15, .68); }
+    @media (max-width: 680px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
-    h1 {
-      margin: 0 0 8px;
-      font-size: 1.5rem
-    }
+    .tabs { display: flex; gap: 4px; margin: 20px 0 14px; padding: 4px; border-radius: 999px; background: var(--panel); border: 1px solid var(--hair); overflow-x: auto; scrollbar-width: none; }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tabs button { flex: none; min-height: 36px; padding: 5px 14px; border: 0; border-radius: 999px; background: none; color: var(--dim); font-weight: 700; font-size: .88rem; cursor: pointer; }
+    .tabs button[aria-selected="true"] { background: var(--yellow); color: var(--bg); }
+    @media (max-width: 440px) { .tabs { flex-wrap: wrap; justify-content: center; border-radius: 18px; } .tabs button { padding: 5px 11px; font-size: .84rem; } }
+    .badge { display: inline-grid; place-items: center; min-width: 18px; height: 18px; margin-left: 6px; padding: 0 5px; border-radius: 999px; background: var(--red); color: #fff; font-size: .7rem; }
 
-    h2 {
-      margin: 0 0 12px;
-      font-size: 1.15rem
-    }
+    .week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+    .day { padding: 8px 0; border-radius: 10px; text-align: center; font-size: .8rem; font-weight: 700; color: var(--dim); background: var(--panel); border: 1px solid var(--hair); }
+    .day.on { background: rgba(255, 213, 0, .14); color: var(--yellow); border-color: rgba(255, 213, 0, .4); }
+    .day.today { outline: 2px solid var(--fg); outline-offset: -2px; }
+    .next { margin-top: 14px; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+    .next b { font-size: 1.15rem; font-weight: 800; }
 
-    .muted {
-      color: #65758b
-    }
+    .meter { height: 8px; margin: 10px 0 6px; border-radius: 8px; background: rgba(255, 255, 255, .1); overflow: hidden; }
+    .meter i { display: block; height: 100%; border-radius: 8px; background: var(--green); }
+    .dots { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+    .dot { width: 14px; height: 14px; border-radius: 50%; background: var(--panel-2); border: 1px solid var(--line); }
+    .dot.present { background: var(--green); border-color: transparent; }
+    .dot.absent, .dot.missed { background: rgba(255, 66, 88, .55); border-color: transparent; }
 
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 12px
-    }
+    .list { display: grid; margin: 0; padding: 0; list-style: none; }
+    .list li { display: flex; align-items: center; justify-content: space-between; gap: 6px 14px; flex-wrap: wrap; padding: 11px 0; border-top: 1px solid var(--hair); }
+    .list li:first-child { border-top: 0; padding-top: 2px; }
+    .list .what { min-width: 0; flex: 1 1 200px; }
+    .list .what b { display: block; font-weight: 700; }
+    .list .when { color: var(--dim); font-size: .84rem; }
+    .num { font-variant-numeric: tabular-nums; font-weight: 700; }
+    .pill { display: inline-flex; align-items: center; gap: 7px; padding: 3px 11px; border-radius: 999px; font-weight: 700; font-size: .8rem; background: var(--panel-2); white-space: nowrap; }
+    .pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--dim); }
+    .pill.present::before, .pill.approved::before { background: var(--green); }
+    .pill.absent::before, .pill.missed::before, .pill.rejected::before { background: var(--red); }
+    .pill.open::before, .pill.pending::before { background: var(--yellow); }
+    .empty { padding: 18px 0 6px; color: var(--dim); }
 
-    label {
-      display: block;
-      font-weight: 650;
-      margin-bottom: 5px
-    }
+    form { display: grid; gap: 12px; }
+    label { display: grid; gap: 5px; font-weight: 600; font-size: .9rem; }
+    input:not([type="file"]), select, textarea { width: 100%; min-height: 42px; padding: 9px 12px; border-radius: 10px; background: var(--field); border: 1px solid var(--line); }
+    input:focus, select:focus, textarea:focus { outline: 0; border-color: var(--yellow); }
+    textarea { min-height: 80px; resize: vertical; }
+    details summary { cursor: pointer; font-weight: 700; list-style: none; }
+    details summary::-webkit-details-marker { display: none; }
+    details[open] summary { margin-bottom: 12px; }
 
-    input,
-    select,
-    textarea {
-      width: 100%;
-      padding: 11px;
-      border: 1px solid #ccd6e3;
-      border-radius: 9px;
-      font: inherit
-    }
-
-    button {
-      background: var(--blue);
-      color: #fff;
-      border: 0;
-      border-radius: 9px;
-      padding: 11px 14px;
-      font-weight: 700;
-      cursor: pointer
-    }
-
-    button.secondary {
-      background: #e8edf5;
-      color: var(--navy)
-    }
-
-    form {
-      display: grid;
-      gap: 12px
-    }
-
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px
-    }
-
-    .stat {
-      background: #f3f6fb;
-      border-radius: 10px;
-      padding: 12px
-    }
-
-    .stat b {
-      display: block;
-      font-size: 1.4rem
-    }
-
-    .hidden {
-      display: none
-    }
-
-    .notice {
-      padding: 10px;
-      background: #fff4ce;
-      border-radius: 9px;
-      margin: 10px 0
-    }
-
-    .item {
-      padding: 10px 0;
-      border-bottom: 1px solid #e8edf4
-    }
-
-    .item:last-child {
-      border: 0
-    }
-
-    @media(max-width:620px) {
-      .grid {
-        grid-template-columns: 1fr
-      }
-
-      .stats {
-        grid-template-columns: 1fr 1fr
-      }
-
-      header img {
-        width: 50px;
-        height: 50px
-      }
-
-      main {
-        margin-top: 12px
-      }
-
-      .card {
-        padding: 14px
-      }
-    }
+    .signin { max-width: 520px; margin: 8vh auto 0; text-align: center; }
+    .signin h1 { font-size: 1.6rem; font-weight: 800; font-stretch: 112%; margin: 8px 0; }
+    .signin ol { text-align: left; margin: 16px 0; padding-left: 20px; display: grid; gap: 6px; }
   </style>
-  <link rel="stylesheet" href="/tcr-member-theme.css">
 </head>
 
 <body>
-  <header><img src="/assets/opt/logo.webp" onerror="this.style.display='none'" alt="TCR">
-    <div><b>Team Classic Rollers</b>
-      <div style="color:#c7d5e8">Member Portal</div>
-    </div>
+  <header class="top">
+    <a class="brand" href="https://teamclassicrollers.club"><img src="/assets/opt/logo.webp" onerror="this.remove()" alt="Team Classic Rollers"><span>Member portal</span></a>
+    <button id="logout" class="btn quiet" type="button" hidden>Sign out</button>
   </header>
+
   <main>
-    <section class="card">
-      <h1>Member Portal</h1>
-      <p class="muted">Verify with your Telegram account to access your private member information.</p>
-      <div id="msg" class="notice">Checking your sign-in…</div>
-      <div id="sessionForm">
-        <p>Already verified? Send <b>/login</b> to the TCR Telegram bot for a new link. First time here? <a href="https://teamclassicrollers.club/login">See how to sign in</a>.</p>
-      </div><button id="logout" class="secondary hidden" type="button">Sign out</button>
+    <section id="signedOut" class="card signin" hidden>
+      <p class="eyebrow">Members</p>
+      <h1>Sign in with Telegram</h1>
+      <p class="dim">There's no password. The TCR bot sends you a link that signs you in for 30 days.</p>
+      <ol>
+        <li>Open the TCR bot in Telegram.</li>
+        <li>Send <b>/login</b>.</li>
+        <li>Tap the link it sends you.</li>
+      </ol>
+      <a class="btn" href="https://teamclassicrollers.club/login">How to sign in</a>
+      <p id="signInMsg" class="notice"></p>
     </section>
-    <div id="app" class="hidden">
+
+    <p id="loading" class="dim">Checking your sign-in…</p>
+
+    <div id="app" hidden>
       <section class="card">
-        <h2>My statistics</h2>
+        <div class="hello">
+          <div id="initial" class="avatar" aria-hidden="true"></div>
+          <img id="avatar" class="avatar" alt="" hidden>
+          <div class="grow">
+            <p class="eyebrow" id="team"></p>
+            <h1 id="name"></h1>
+          </div>
+        </div>
         <div class="stats" id="stats"></div>
       </section>
-      <section class="card">
-        <h2>My profile</h2>
-        <form id="profileForm" enctype="multipart/form-data">
-          <div class="grid">
-            <div><label>Full name<input name="name" maxlength="120"></label></div>
-            <div><label>Phone number<input name="phone" maxlength="40"></label></div>
-            <div><label>Date of birth<input name="dateOfBirth" type="date"></label></div>
-            <div><label>Gender<select name="gender">
+      <p id="msg" class="notice" role="status"></p>
+
+      <nav class="tabs" role="tablist" aria-label="Portal sections">
+        <button role="tab" data-tab="overview">Overview</button>
+        <button role="tab" data-tab="games">My games</button>
+        <button role="tab" data-tab="attendance">Attendance</button>
+        <button role="tab" data-tab="profile">Profile</button>
+        <button role="tab" data-tab="inbox">Inbox<span id="inboxCount" class="badge" hidden></span></button>
+      </nav>
+
+      <section data-panel="overview">
+        <div class="grid">
+          <div class="card">
+            <h2>Training days</h2>
+            <div class="week" id="week"></div>
+            <div class="next"><span class="dim">Next training</span><b id="nextTraining"></b></div>
+          </div>
+          <div class="card">
+            <h2>My attendance</h2>
+            <p id="rateLine" class="dim"></p>
+            <div class="meter"><i id="rateBar" style="width:0"></i></div>
+            <div class="dots" id="recentDots" aria-label="Recent sessions"></div>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Latest games</h2>
+          <ul class="list" id="latestGames"></ul>
+        </div>
+      </section>
+
+      <section data-panel="games" hidden>
+        <div class="card">
+          <details id="scoreBox">
+            <summary>Send a new score</summary>
+            <form id="scoreForm" enctype="multipart/form-data">
+              <div class="grid">
+                <label>Games<input name="games" type="number" min="1" max="100" required></label>
+                <label>Total pins<input name="scores" type="number" min="0" max="100000" required></label>
+              </div>
+              <label>Notes <span class="dim small">Optional</span><textarea name="notes" maxlength="500"></textarea></label>
+              <label>Photos of the lane screen <span class="dim small">Up to 6</span><input name="proofs" type="file" accept="image/png,image/jpeg,image/webp" multiple></label>
+              <div><button class="btn" type="submit">Send for review</button></div>
+            </form>
+          </details>
+        </div>
+        <div class="card">
+          <h2>My score requests</h2>
+          <ul class="list" id="requests"></ul>
+        </div>
+        <div class="card">
+          <h2>Game history</h2>
+          <ul class="list" id="games"></ul>
+        </div>
+      </section>
+
+      <section data-panel="attendance" hidden>
+        <div class="card">
+          <h2>Training schedule</h2>
+          <p class="dim small">The team trains every <span id="dayNames"></span>.</p>
+          <div class="meter"><i id="rateBar2" style="width:0"></i></div>
+          <p id="rateLine2" class="dim small"></p>
+        </div>
+        <div class="card">
+          <h2>My sessions</h2>
+          <ul class="list" id="sessions"></ul>
+        </div>
+      </section>
+
+      <section data-panel="profile" hidden>
+        <div class="card">
+          <h2>My details</h2>
+          <form id="profileForm" enctype="multipart/form-data">
+            <div class="grid">
+              <label>Full name<input name="name" maxlength="120"></label>
+              <label>Phone number<input name="phone" maxlength="40" inputmode="tel"></label>
+              <label>Date of birth<input name="dateOfBirth" type="date"></label>
+              <label>Gender<select name="gender">
                   <option value="">Prefer not to say</option>
                   <option>Female</option>
                   <option>Male</option>
                   <option>Other</option>
-                </select></label></div>
-            <div><label>City / province<input name="cityProvince" maxlength="120"></label></div>
-            <div><label>Profile photo<input name="photo" type="file" accept="image/png,image/jpeg,image/webp"></label>
+                </select></label>
+              <label>City or province<input name="cityProvince" maxlength="120"></label>
+              <label>Profile photo<input name="photo" type="file" accept="image/png,image/jpeg,image/webp"></label>
             </div>
-          </div><button>Save profile</button>
-        </form>
+            <div><button class="btn" type="submit">Save details</button></div>
+          </form>
+        </div>
       </section>
-      <section class="card">
-        <h2>Submit score request</h2>
-        <form id="scoreForm" enctype="multipart/form-data">
-          <div class="grid">
-            <div><label>Games<input name="games" type="number" min="1" max="100" required></label></div>
-            <div><label>Total score<input name="scores" type="number" min="0" max="100000" required></label></div>
-          </div><label>Notes<textarea name="notes" maxlength="500"></textarea></label><label>Proof photos (up to
-            6)<input name="proofs" type="file" accept="image/png,image/jpeg,image/webp" multiple></label><button>Submit
-            request</button>
-        </form>
-        <div id="requests"></div>
-      </section>
-      <section class="card">
-        <h2>Notifications</h2>
-        <div id="notifications" class="muted">None yet.</div>
-      </section>
-      <section class="card">
-        <h2>Training and attendance</h2>
-        <div id="training" class="muted">No sessions.</div>
-        <h2 style="margin-top:16px">My attendance</h2>
-        <div id="attendance" class="muted">No records.</div>
+
+      <section data-panel="inbox" hidden>
+        <div class="card">
+          <h2>Messages from the team</h2>
+          <ul class="list" id="notifications"></ul>
+        </div>
       </section>
     </div>
   </main>
+
   <script>
-    const $ = s => document.querySelector(s); let session = ''; function say(t) { $('#msg').textContent = t } function authHeaders() { return {} } async function api(url, opts = {}) { opts.headers = { ...(opts.headers || {}) }; opts.credentials = 'include'; const r = await fetch(url, opts); const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || 'Request failed'); return j } function list(el, items, fn) { el.innerHTML = items.length ? items.map(fn).join('') : '<p class="muted">Nothing here yet.</p>' } async function load() { const d = await api('/api/member/me'); $('#app').classList.remove('hidden'); $('#logout').classList.remove('hidden'); $('#sessionForm').classList.add('hidden'); $('#stats').innerHTML = `<div class="stat"><span>Member</span><b>${esc(d.member.name)}</b><small>${esc(d.member.team || '')}</small></div><div class="stat"><span>Games</span><b>${d.member.games}</b></div><div class="stat"><span>Average</span><b>${d.member.average}</b></div><div class="stat"><span>Total score</span><b>${d.member.scores}</b></div>`; for (const [k, v] of Object.entries(d.member.profile || {})) { const input = $(`[name="${k}"]`); if (input && input.type !== 'file') input.value = v } list($('#notifications'), d.notifications, n => `<div class="item"><b>${esc(n.title)}</b><p>${esc(n.message)}</p><small>${esc(n.createdAt || '')}</small></div>`); list($('#training'), d.training, t => `<div class="item"><b>${esc(t.title)}</b> · ${esc(t.date)}<p>${esc(t.location || '')}</p></div>`); list($('#attendance'), d.attendance, a => `<div class="item">${esc(a.sessionId)} · <b>${esc(a.status)}</b> · ${esc(a.recordedAt || '')}</div>`); const r = await api('/api/member/score-requests'); list($('#requests'), r.requests, q => `<div class="item">${q.games} games · ${q.scores} points · <b>${esc(q.status)}</b><p>${esc(q.createdAt || '')}</p></div>`); say('Signed in as ' + d.member.name) } function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])) } $('#sessionForm').onsubmit = e => e.preventDefault();
-    async function boot() {
-      const params = new URLSearchParams(location.search);
-      const ticket = params.get('ticket');
-      if (ticket) {
-        history.replaceState({}, '', location.pathname);
-        try {
-          const r = await fetch('/api/member/browser-login', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ticket }) });
-          const j = await r.json().catch(() => ({}));
-          if (!r.ok) throw new Error(j.error || 'Sign-in failed.');
-          say('Signed in successfully.');
-        } catch (err) { say(err.message); return }
+    const $ = (selector) => document.querySelector(selector);
+    const DAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const DAY_LONG = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const STATUS = { present: "Present", absent: "Absent", missed: "Missed", open: "Open", pending: "Waiting", approved: "Approved", rejected: "Not approved" };
+    const MAIN_SITE = "https://teamclassicrollers.club";
+
+    const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    const number = (value) => Number(value || 0).toLocaleString("en-US");
+    const say = (text) => { $("#msg").textContent = text; };
+    const niceDate = (value) => {
+      const date = /^\d{4}-\d{2}-\d{2}$/.test(String(value)) ? new Date(`${value}T12:00:00`) : new Date(value);
+      return Number.isNaN(date.getTime()) ? String(value || "") : date.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
+    };
+    const signed = (value) => (Number(value) > 0 ? "+" : "") + number(value);
+
+    async function api(url, options = {}) {
+      const response = await fetch(url, { ...options, credentials: "include" });
+      const json = await response.json().catch(() => ({}));
+      if (!response.ok) { const error = new Error(json.error || "Something went wrong. Please try again."); error.status = response.status; throw error; }
+      return json;
+    }
+
+    function fill(element, items, render, emptyText) {
+      element.innerHTML = items.length ? items.map(render).join("") : `<li class="empty">${esc(emptyText)}</li>`;
+    }
+
+    function photoUrl(path) {
+      const value = String(path || "");
+      if (!value) return "";
+      if (value.startsWith("/uploads/")) return value;
+      return `${MAIN_SITE}/${value.replace(/^\//, "").replace(/assets\/members\/([^/]+)\.png$/, "assets/members/thumbs/$1.webp")}`;
+    }
+
+    function showTab(name) {
+      document.querySelectorAll("[data-tab]").forEach((tab) => tab.setAttribute("aria-selected", String(tab.dataset.tab === name)));
+      document.querySelectorAll("[data-panel]").forEach((panel) => { panel.hidden = panel.dataset.panel !== name; });
+      history.replaceState(null, "", `#${name}`);
+    }
+    document.querySelectorAll("[data-tab]").forEach((tab) => tab.addEventListener("click", () => showTab(tab.dataset.tab)));
+
+    function nextTraining(days) {
+      const today = new Date();
+      for (let i = 0; i < 8; i += 1) {
+        const date = new Date(today.getFullYear(), today.getMonth(), today.getDate() + i);
+        if (days.includes(date.getDay())) {
+          if (i === 0) return "Today";
+          if (i === 1) return "Tomorrow";
+          return date.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "short" });
+        }
       }
-      try { await load() } catch (err) { say(err.message) }
-    } $('#profileForm').onsubmit = async e => { e.preventDefault(); try { const r = await api('/api/member/profile', { method: 'PATCH', body: new FormData(e.target) }); say('Profile saved.'); await load() } catch (err) { say(err.message) } }; $('#scoreForm').onsubmit = async e => { e.preventDefault(); try { await api('/api/member/score-requests', { method: 'POST', body: new FormData(e.target) }); say('Score request submitted for admin review.'); e.target.reset(); await load() } catch (err) { say(err.message) } }; $('#logout').onclick = async () => { await fetch('/api/member/logout', { method: 'POST', credentials: 'include' }); location.reload() }; boot();
+      return "No days set";
+    }
+
+    function gameLine(row) {
+      const parts = [];
+      if (row.games !== undefined) parts.push(`${row.kind === "corrected" ? number(row.games) : signed(row.games)} ${Math.abs(row.games) === 1 ? "game" : "games"}`);
+      if (row.pins !== undefined) parts.push(`${row.kind === "corrected" ? number(row.pins) : signed(row.pins)} pins`);
+      const average = row.kind !== "corrected" && row.games > 0 && row.pins > 0 ? ` · ${Math.round(row.pins / row.games)} avg` : "";
+      const title = { approved: "Score approved", added: "Added by the team", corrected: "Stats corrected" }[row.kind];
+      return `<li><div class="what"><b>${esc(title)}</b><span class="when">${esc(niceDate(row.at))}${row.note ? ` · ${esc(row.note)}` : ""}</span></div><span class="num">${esc(parts.join(" · "))}${esc(average)}</span></li>`;
+    }
+
+    function render(data, requests) {
+      const { member, attendance, games, schedule, notifications } = data;
+      const profile = member.profile || {};
+      const name = profile.name || member.name;
+      const photo = photoUrl(profile.photo || member.photo);
+      // The initial shows until the photo loads, and stays if it can't.
+      const avatar = $("#avatar");
+      $("#initial").textContent = String(name).trim().charAt(0).toUpperCase();
+      avatar.onload = () => { avatar.hidden = false; $("#initial").hidden = true; };
+      avatar.onerror = () => { avatar.hidden = true; $("#initial").hidden = false; };
+      if (photo) avatar.src = photo; else avatar.onerror();
+      $("#name").textContent = String(name).toLowerCase();
+      $("#team").textContent = member.team || "";
+
+      const rate = attendance.total ? Math.round((attendance.present / attendance.total) * 100) : null;
+      $("#stats").innerHTML = [
+        ["Games", number(member.games)],
+        ["Average", member.games ? number(member.average) : "—"],
+        ["Total pins", number(member.scores)],
+        ["Attendance", rate === null ? "—" : `${rate}%`],
+      ].map(([label, value], i) => `<div class="stat${i === 1 ? " accent" : ""}"><span>${label}</span><b>${esc(value)}</b></div>`).join("");
+
+      const days = schedule.days || [];
+      const today = new Date().getDay();
+      $("#week").innerHTML = [1, 2, 3, 4, 5, 6, 0].map((d) => `<div class="day${days.includes(d) ? " on" : ""}${d === today ? " today" : ""}">${DAY_SHORT[d]}</div>`).join("");
+      $("#nextTraining").textContent = nextTraining(days);
+      const names = days.map((d) => DAY_LONG[d]);
+      $("#dayNames").textContent = names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}` : names.join("");
+
+      const rateText = attendance.total
+        ? `You came to ${attendance.present} of ${attendance.total} ${attendance.total === 1 ? "session" : "sessions"} since your first one.`
+        : "Your attendance will show here after your first session.";
+      for (const id of ["#rateLine", "#rateLine2"]) $(id).textContent = rateText;
+      for (const id of ["#rateBar", "#rateBar2"]) $(id).style.width = `${rate || 0}%`;
+      const recent = attendance.sessions.filter((s) => s.status !== "open").slice(0, 12).reverse();
+      $("#recentDots").innerHTML = recent.map((s) => `<span class="dot ${esc(s.status)}" title="${esc(niceDate(s.date))}: ${esc(STATUS[s.status] || s.status)}"></span>`).join("");
+
+      fill($("#sessions"), attendance.sessions, (s) => `<li><div class="what"><b>${esc(s.title)}</b><span class="when">${esc(niceDate(s.date))}${s.location ? ` · ${esc(s.location)}` : ""}</span></div><span class="pill ${esc(s.status)}">${esc(STATUS[s.status] || s.status)}</span></li>`, "No sessions yet.");
+      fill($("#games"), games, gameLine, "No games recorded yet.");
+      fill($("#latestGames"), games.slice(0, 3), gameLine, "No games recorded yet. Send your first score from My games.");
+      fill($("#requests"), requests, (r) => `<li><div class="what"><b>${number(r.games)} ${r.games === 1 ? "game" : "games"} · ${number(r.scores)} pins</b><span class="when">Sent ${esc(niceDate(r.createdAt))}${r.reviewReason ? ` · ${esc(r.reviewReason)}` : ""}</span></div><span class="pill ${esc(r.status)}">${esc(STATUS[r.status] || r.status)}</span></li>`, "You haven't sent any scores from here yet.");
+      fill($("#notifications"), notifications, (n) => `<li><div class="what"><b>${esc(n.title)}</b><span>${esc(n.message)}</span><br><span class="when">${esc(niceDate(n.createdAt))}</span></div></li>`, "No messages yet.");
+      const unread = notifications.filter((n) => !n.read).length;
+      $("#inboxCount").hidden = !unread;
+      $("#inboxCount").textContent = unread;
+
+      for (const [key, value] of Object.entries(profile)) {
+        const input = document.querySelector(`#profileForm [name="${key}"]`);
+        if (input && input.type !== "file") input.value = value;
+      }
+    }
+
+    async function load() {
+      const [data, { requests }] = await Promise.all([api("/api/member/me"), api("/api/member/score-requests")]);
+      render(data, requests);
+      $("#loading").hidden = true;
+      $("#signedOut").hidden = true;
+      $("#app").hidden = false;
+      $("#logout").hidden = false;
+    }
+
+    function showSignedOut(text) {
+      $("#loading").hidden = true;
+      $("#app").hidden = true;
+      $("#logout").hidden = true;
+      $("#signedOut").hidden = false;
+      $("#signInMsg").textContent = text || "";
+    }
+
+    $("#profileForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const button = event.submitter;
+      button.disabled = true;
+      try { await api("/api/member/profile", { method: "PATCH", body: new FormData(event.target) }); say("Your details were saved."); await load(); }
+      catch (error) { say(error.message); }
+      finally { button.disabled = false; }
+    });
+
+    $("#scoreForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const button = event.submitter;
+      button.disabled = true;
+      try {
+        await api("/api/member/score-requests", { method: "POST", body: new FormData(event.target) });
+        event.target.reset();
+        $("#scoreBox").open = false;
+        say("Score sent. An admin will review it soon.");
+        await load();
+      } catch (error) { say(error.message); }
+      finally { button.disabled = false; }
+    });
+
+    $("#logout").addEventListener("click", async () => {
+      await fetch("/api/member/logout", { method: "POST", credentials: "include" }).catch(() => {});
+      showSignedOut("You're signed out.");
+    });
+
+    async function boot() {
+      const ticket = new URLSearchParams(location.search).get("ticket");
+      if (ticket) {
+        history.replaceState(null, "", location.pathname);
+        try { await api("/api/member/browser-login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ticket }) }); }
+        catch (error) { showSignedOut(error.message); return; }
+      }
+      try {
+        await load();
+        const wanted = location.hash.slice(1);
+        showTab(document.querySelector(`[data-tab="${CSS.escape(wanted)}"]`) ? wanted : "overview");
+      } catch (error) {
+        showSignedOut(error.status === 401 ? "" : error.message);
+      }
+    }
+    boot();
   </script>
 </body>
 
