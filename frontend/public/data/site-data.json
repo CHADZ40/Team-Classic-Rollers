@@ -188,8 +188,8 @@
       "name": "PHAN SOKSREYMEAS",
       "team": "Team C",
       "photo": "assets/members/MEAS TEAM C.png",
-      "games": 3,
-      "scores": 514,
+      "games": 6,
+      "scores": 989,
       "goal": 150,
       "sortOrder": 14,
       "active": true,
@@ -244,8 +244,8 @@
       "name": "HEANG KIMHUOY",
       "team": "Team C",
       "photo": "/uploads/1794322880446-b29dc1f64a98.jpg",
-      "games": 0,
-      "scores": 0,
+      "games": 3,
+      "scores": 405,
       "goal": 150,
       "sortOrder": 18,
       "active": true,
@@ -300,8 +300,8 @@
       "name": "LYHOUR ROEUN",
       "team": "Team C",
       "photo": "/uploads/1794322913741-46cad0cbb12c.png",
-      "games": 3,
-      "scores": 387,
+      "games": 8,
+      "scores": 978,
       "goal": 150,
       "sortOrder": 22,
       "active": true,
@@ -332,7 +332,7 @@
     "aboutBody": "Team Classic Rollers brings Cambodian bowlers together to train, compete and improve. You'll find us working on spares, learning from each other and cheering just as loudly for a teammate's first strike as for a tournament win.",
     "aboutBody2": "We care about discipline, respect, teamwork and steady progress. Whether you're chasing your next tournament or still learning to read a scoresheet, there's a place for you here and people ready to help you grow."
   },
-  "updatedAt": "2026-11-10T15:15:20.794Z",
+  "updatedAt": "2026-11-10T15:16:01.281Z",
   "introductions": [],
   "news": [],
   "history": {
@@ -391,6 +391,14 @@
     ],
     "phan-soksreymeas": [
       {
+        "timestamp": "2026-11-10T15:16:01.281Z",
+        "action": "score_added",
+        "previousScores": 514,
+        "newScores": 989,
+        "amount": 475,
+        "reason": "Score added by admin"
+      },
+      {
         "timestamp": "2026-11-10T15:15:20.797Z",
         "action": "member_stats_set",
         "previousScores": 0,
@@ -424,7 +432,16 @@
         "reason": ""
       }
     ],
-    "heang-kimhuoy": [],
+    "heang-kimhuoy": [
+      {
+        "timestamp": "2026-11-10T15:15:49.618Z",
+        "action": "score_added",
+        "previousScores": 0,
+        "newScores": 405,
+        "amount": 405,
+        "reason": "Score added by admin"
+      }
+    ],
     "sovannaroth-long": [
       {
         "timestamp": "2026-11-10T15:09:51.843Z",
@@ -438,6 +455,14 @@
     "sim-sreynin": [],
     "lyhour-roeun": [
       {
+        "timestamp": "2026-11-10T15:15:40.352Z",
+        "action": "score_added",
+        "previousScores": 387,
+        "newScores": 978,
+        "amount": 591,
+        "reason": "Score added by admin"
+      },
+      {
         "timestamp": "2026-11-10T15:11:08.118Z",
         "action": "member_stats_set",
         "previousScores": 0,
@@ -447,5 +472,5 @@
     ],
     "daravan-bun": []
   },
-  "publishedAt": "2026-11-10T15:15:35.801Z"
+  "publishedAt": "2026-11-10T15:16:16.284Z"
 }
