@@ -5,12 +5,14 @@
       "slug": "jojo",
       "name": "JOJO",
       "team": "Team A",
-      "photo": "assets/members/JOJO TEAM A.png",
+      "photo": "/uploads/1794322437609-71fd86dc902a.jpeg",
       "games": 0,
       "scores": 0,
       "goal": 200,
       "sortOrder": 1,
-      "active": true
+      "active": true,
+      "bio": "",
+      "achievements": []
     },
     {
       "id": "sovann-chheng",
@@ -22,7 +24,9 @@
       "scores": 0,
       "goal": 200,
       "sortOrder": 2,
-      "active": true
+      "active": true,
+      "bio": "",
+      "achievements": []
     },
     {
       "id": "eric",
@@ -34,7 +38,9 @@
       "scores": 0,
       "goal": 200,
       "sortOrder": 3,
-      "active": true
+      "active": true,
+      "bio": "",
+      "achievements": []
     },
     {
       "id": "chen-han-jun",
@@ -46,7 +52,9 @@
       "scores": 0,
       "goal": 200,
       "sortOrder": 4,
-      "active": true
+      "active": true,
+      "bio": "",
+      "achievements": []
     },
     {
       "id": "norn-nakry",
@@ -58,7 +66,9 @@
       "scores": 0,
       "goal": 200,
       "sortOrder": 5,
-      "active": true
+      "active": true,
+      "bio": "",
+      "achievements": []
     },
     {
       "id": "pich-eliza",
@@ -70,7 +80,9 @@
       "scores": 0,
       "goal": 200,
       "sortOrder": 6,
-      "active": true
+      "active": true,
+      "bio": "",
+      "achievements": []
     },
     {
       "id": "neo-eric-monyratanak",
@@ -82,7 +94,9 @@
       "scores": 0,
       "goal": 200,
       "sortOrder": 7,
-      "active": true
+      "active": true,
+      "bio": "",
+      "achievements": []
     },
     {
       "id": "vong-sokvattanac",
@@ -94,7 +108,9 @@
       "scores": 0,
       "goal": 175,
       "sortOrder": 8,
-      "active": true
+      "active": true,
+      "bio": "",
+      "achievements": []
     },
     {
       "id": "saroeurn-sok",
@@ -106,7 +122,9 @@
       "scores": 0,
       "goal": 175,
       "sortOrder": 9,
-      "active": true
+      "active": true,
+      "bio": "",
+      "achievements": []
     },
     {
       "id": "tha-nell-both",
@@ -118,7 +136,9 @@
       "scores": 0,
       "goal": 175,
       "sortOrder": 10,
-      "active": true
+      "active": true,
+      "bio": "",
+      "achievements": []
     },
     {
       "id": "sokhom-d-menghour",
@@ -130,7 +150,9 @@
       "scores": 0,
       "goal": 175,
       "sortOrder": 11,
-      "active": true
+      "active": true,
+      "bio": "",
+      "achievements": []
     },
     {
       "id": "heng-raboth",
@@ -142,7 +164,9 @@
       "scores": 0,
       "goal": 175,
       "sortOrder": 12,
-      "active": true
+      "active": true,
+      "bio": "",
+      "achievements": []
     },
     {
       "id": "roth-pisey",
@@ -154,7 +178,9 @@
       "scores": 0,
       "goal": 150,
       "sortOrder": 13,
-      "active": true
+      "active": true,
+      "bio": "",
+      "achievements": []
     },
     {
       "id": "phan-soksreymeas",
@@ -166,7 +192,9 @@
       "scores": 0,
       "goal": 150,
       "sortOrder": 14,
-      "active": true
+      "active": true,
+      "bio": "",
+      "achievements": []
     },
     {
       "id": "srun-sophea",
@@ -178,7 +206,9 @@
       "scores": 0,
       "goal": 150,
       "sortOrder": 15,
-      "active": true
+      "active": true,
+      "bio": "",
+      "achievements": []
     },
     {
       "id": "sim-sreyneath",
@@ -190,7 +220,9 @@
       "scores": 0,
       "goal": 150,
       "sortOrder": 16,
-      "active": true
+      "active": true,
+      "bio": "",
+      "achievements": []
     },
     {
       "id": "sophal-mony",
@@ -202,7 +234,9 @@
       "scores": 0,
       "goal": 150,
       "sortOrder": 17,
-      "active": true
+      "active": true,
+      "bio": "",
+      "achievements": []
     },
     {
       "id": "heang-kimhuoy",
@@ -214,7 +248,9 @@
       "scores": 0,
       "goal": 150,
       "sortOrder": 18,
-      "active": true
+      "active": true,
+      "bio": "",
+      "achievements": []
     },
     {
       "id": "sovannaroth-long",
@@ -226,7 +262,9 @@
       "scores": 0,
       "goal": 150,
       "sortOrder": 19,
-      "active": true
+      "active": true,
+      "bio": "",
+      "achievements": []
     },
     {
       "id": "liyeanchhing-keav",
@@ -238,7 +276,9 @@
       "scores": 0,
       "goal": 150,
       "sortOrder": 20,
-      "active": true
+      "active": true,
+      "bio": "",
+      "achievements": []
     },
     {
       "id": "sim-sreynin",
@@ -250,7 +290,9 @@
       "scores": 0,
       "goal": 150,
       "sortOrder": 21,
-      "active": true
+      "active": true,
+      "bio": "",
+      "achievements": []
     },
     {
       "id": "lyhour-roeun",
@@ -262,7 +304,9 @@
       "scores": 0,
       "goal": 150,
       "sortOrder": 22,
-      "active": true
+      "active": true,
+      "bio": "",
+      "achievements": []
     },
     {
       "id": "daravan-bun",
@@ -274,7 +318,9 @@
       "scores": 0,
       "goal": 150,
       "sortOrder": 23,
-      "active": true
+      "active": true,
+      "bio": "",
+      "achievements": []
     }
   ],
   "content": {
@@ -286,7 +332,33 @@
     "aboutBody": "Team Classic Rollers brings Cambodian bowlers together to train, compete and improve. You'll find us working on spares, learning from each other and cheering just as loudly for a teammate's first strike as for a tournament win.",
     "aboutBody2": "We care about discipline, respect, teamwork and steady progress. Whether you're chasing your next tournament or still learning to read a scoresheet, there's a place for you here and people ready to help you grow."
   },
-  "updatedAt": null,
-  "history": {},
-  "publishedAt": null
+  "updatedAt": "2026-11-10T14:53:59.543Z",
+  "introductions": [],
+  "news": [],
+  "history": {
+    "jojo": [],
+    "sovann-chheng": [],
+    "eric": [],
+    "chen-han-jun": [],
+    "norn-nakry": [],
+    "pich-eliza": [],
+    "neo-eric-monyratanak": [],
+    "vong-sokvattanac": [],
+    "saroeurn-sok": [],
+    "tha-nell-both": [],
+    "sokhom-d-menghour": [],
+    "heng-raboth": [],
+    "roth-pisey": [],
+    "phan-soksreymeas": [],
+    "srun-sophea": [],
+    "sim-sreyneath": [],
+    "sophal-mony": [],
+    "heang-kimhuoy": [],
+    "sovannaroth-long": [],
+    "liyeanchhing-keav": [],
+    "sim-sreynin": [],
+    "lyhour-roeun": [],
+    "daravan-bun": []
+  },
+  "publishedAt": "2026-11-10T14:54:14.549Z"
 }
