@@ -1,6 +1,9 @@
 // Team data helpers shared across pages.
 
-export const API_BASE = import.meta.env.DEV ? "" : "https://admin.teamclassicrollers.club";
+// The website is published from the admin on a laptop (VITE_STATIC_SITE in .env.production).
+// It then reads a data file instead of a server, and features that need a server are hidden.
+export const STATIC_SITE = import.meta.env.VITE_STATIC_SITE === "true";
+export const API_BASE = import.meta.env.DEV || STATIC_SITE ? "" : "https://admin.teamclassicrollers.club";
 export const SOCIALS = [
   { label: "Facebook", href: "https://web.facebook.com/teamclassicrollers" },
   { label: "Instagram", href: "https://www.instagram.com/teamclassicrollers/" },

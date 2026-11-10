@@ -10,6 +10,7 @@ import { SiteDataProvider } from "./data/SiteData.jsx";
 import { MemberSessionProvider } from "./data/MemberSession.jsx";
 import Shell from "./components/Shell.jsx";
 import Home from "./pages/Home.jsx";
+import { STATIC_SITE } from "./lib/team.js";
 
 const Team = lazy(() => import("./pages/Team.jsx"));
 const Rankings = lazy(() => import("./pages/Rankings.jsx"));
@@ -49,8 +50,9 @@ const router = createBrowserRouter([
       { path: "/learn", element: page(Learn) },
       { path: "/about", element: page(About) },
       { path: "/submit", element: page(Submit) },
-      { path: "/login", element: page(Login) },
-      { path: "/portal", element: page(Portal) },
+      // Member sign-in needs a server, so the published website sends these home.
+      { path: "/login", element: STATIC_SITE ? <Navigate to="/" replace /> : page(Login) },
+      { path: "/portal", element: STATIC_SITE ? <Navigate to="/" replace /> : page(Portal) },
       { path: "/member-portal.html", element: <Navigate to="/portal" replace /> },
       { path: "/members/:id", element: <MemberRoute /> },
       { path: "/index.html", element: <Navigate to="/" replace /> },

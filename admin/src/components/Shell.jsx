@@ -1,5 +1,5 @@
 // Admin frame: sidebar on wide screens, dock on phones, smooth scrolling.
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Lenis from "lenis";
@@ -43,6 +43,35 @@ function PendingCount({ count }) {
   );
 }
 
+// Laptop mode only: shows whether the website has the latest changes.
+function PublishStatus() {
+  const [state, setState] = useState(null);
+  const load = useCallback(() => api("/api/admin/publish").then(setState).catch(() => {}), []);
+  useEffect(() => {
+    load();
+    const busy = state?.status === "waiting" || state?.status === "publishing";
+    const timer = setInterval(load, busy ? 3000 : 15000);
+    return () => clearInterval(timer);
+  }, [load, state?.status]);
+  if (!state?.enabled) return null;
+  const now = async () => { setState((s) => ({ ...s, status: "publishing" })); await api("/api/admin/publish", { method: "POST" }).catch(() => {}); load(); };
+  const when = state.lastPublishedAt ? new Date(state.lastPublishedAt).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) : "";
+  const text = {
+    idle: "Website: no changes yet",
+    waiting: "Website: updating soon…",
+    publishing: "Website: publishing…",
+    done: `Website updated ${when}`,
+    error: "Website: couldn't publish",
+  }[state.status];
+  return (
+    <div className={`publish is-${state.status}`} title={state.error || "Changes go to GitHub, then Vercel updates the website in about a minute."}>
+      <span>{text}</span>
+      {state.status !== "publishing" && <button type="button" onClick={now}>{state.status === "error" ? "Try again" : "Publish now"}</button>}
+      {state.status === "error" && <small>{state.error}</small>}
+    </div>
+  );
+}
+
 function Sidebar({ pending }) {
   const signOut = useSignOut();
   return (
@@ -62,6 +91,7 @@ function Sidebar({ pending }) {
         ))}
       </nav>
       <div className="side-foot">
+        <PublishStatus />
         <a className="side-link" href={WEBSITE} target="_blank" rel="noopener noreferrer"><Icon path="M14 4h6v6M20 4l-9 9M18 14v6H4V6h6" /><span>View website</span></a>
         <button type="button" className="side-link" onClick={signOut}><Icon path="M9 4H4v16h5M15 8l4 4-4 4M19 12H9" /><span>Log out</span></button>
       </div>
