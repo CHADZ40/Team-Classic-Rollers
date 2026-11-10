@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router";
 import { motion, useScroll, useTransform } from "motion/react";
 import { Counter, Lines, Reveal, Tile } from "../components/motion.jsx";
 import { Icon, usePageMeta } from "../components/Shell.jsx";
+import { AverageChart, GameRow, Promotion, STATUS, Training, longDate } from "../components/MemberStats.jsx";
 import { useSiteData } from "../data/SiteData.jsx";
 import { memberMeta } from "../data/routes.js";
 import {
@@ -105,6 +106,9 @@ export default function Profile() {
   const achievements = Array.isArray(member.achievements) ? member.achievements : [];
   const words = niceName(member.name).split(" ");
   const gap = s.goal - s.avg;
+  // Published with the website: this bowler's games and training attendance.
+  const portal = data.portal?.[member.id];
+  const promotion = data.promotion?.[member.team] || null;
 
   return (
     <div className="wrap profile" key={member.id} style={{ "--c": TEAM_COLOR[member.team] }}>
@@ -146,6 +150,32 @@ export default function Profile() {
           </div>
         </div>
 
+        {portal && (
+          <>
+            <div className="portal-grid profile-cards">
+              <Promotion member={member} promotion={promotion} />
+              <Training schedule={data.schedule || { days: [] }} attendance={portal.attendance} />
+            </div>
+            <Reveal className="portal-block">
+              <h2 className="tile-title">Performance</h2>
+              <p className="dim portal-sub">Average for each set of games.</p>
+              <AverageChart games={portal.games} target={promotion?.average} />
+            </Reveal>
+            {portal.attendance.sessions.length > 0 && (
+              <Reveal className="portal-block">
+                <h2 className="tile-title">Training attendance</h2>
+                <ul className="portal-list">
+                  {portal.attendance.sessions.slice(0, 12).map((session) => (
+                    <li key={session.id}>
+                      <div><b>{session.title}</b><small>{longDate(session.date)}{session.location ? ` · ${session.location}` : ""}</small></div>
+                      <span className={`state is-${session.status}`}>{STATUS[session.status]}</span>
+                    </li>
+                  ))}
+                </ul>
+              </Reveal>
+            )}
+          </>
+        )}
         {member.bio && <Reveal className="profile-block"><h2 className="tile-title">About {words[0]}</h2><p className="dim pre">{member.bio}</p></Reveal>}
         {achievements.length > 0 && (
           <Reveal className="profile-block">
@@ -155,7 +185,8 @@ export default function Profile() {
         )}
         <Reveal className="profile-block">
           <h2 className="tile-title">Score history</h2>
-          <History id={member.id} />
+          {portal ? (portal.games.length ? <ul className="portal-list">{portal.games.slice(0, 12).map((row, i) => <GameRow key={`${row.at}${i}`} row={row} />)}</ul> : <p className="dim">No games recorded yet.</p>)
+            : <History id={member.id} />}
         </Reveal>
 
         {prev && next && (

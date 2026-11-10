@@ -680,3 +680,7 @@ button.cmd:hover { background: rgba(255, 213, 0, .24); }
 .portal-gate-card { width: min(560px, 100%); display: grid; gap: 12px; }
 .portal-gate-card .actions { margin-top: 8px; }
 .portal-error { color: #ff9aa6; font-weight: 600; }
+
+/* The same performance cards on a bowler's public profile */
+.profile-cards { margin-top: 18px; }
+.profile .portal-block { margin-top: 12px; }

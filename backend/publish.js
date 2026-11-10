@@ -17,13 +17,13 @@ function git(args, cwd) {
   });
 }
 
-function createPublisher({ repoDir, uploadDir, buildData, delayMs = 15000 }) {
+function createPublisher({ repoDir, uploadDir, buildData, delayMs = 30000 }) {
   const state = { status: "idle", lastPublishedAt: null, error: "" };
   let timer = null;
   let running = false;
   let again = false;
 
-  // Waits a little after the last change, so several quick edits go out together.
+  // Waits 30 seconds after the last change, so a burst of edits or check-ins goes out together.
   function schedule() {
     if (!running) state.status = "waiting";
     clearTimeout(timer);

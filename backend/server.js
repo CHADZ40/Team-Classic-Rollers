@@ -564,7 +564,7 @@ const MEMBER_FILES = {
  browserTickets: path.join(MEMBER_DIR, 'browser-login-tickets.json')
 };
 function readList(key) { try { const v=JSON.parse(fs.readFileSync(MEMBER_FILES[key],'utf8')); return Array.isArray(v)?v:[]; } catch(e) { if(e.code==='ENOENT') return []; throw e; } }
-function writeList(key, list) { const f=MEMBER_FILES[key], tmp=f+'.tmp'; fs.mkdirSync(path.dirname(f),{recursive:true}); fs.writeFileSync(tmp,JSON.stringify(list,null,2),{mode:0o600}); fs.renameSync(tmp,f); }
+function writeList(key, list) { const f=MEMBER_FILES[key], tmp=f+'.tmp'; fs.mkdirSync(path.dirname(f),{recursive:true}); fs.writeFileSync(tmp,JSON.stringify(list,null,2),{mode:0o600}); fs.renameSync(tmp,f); if (key === 'attendance' || key === 'training') onPublicChange(); }
 for (const key of Object.keys(MEMBER_FILES)) if (!fs.existsSync(MEMBER_FILES[key])) writeList(key,[]);
 const PORTAL_ORIGIN = (process.env.MEMBER_PORTAL_ORIGIN || 'https://admin.teamclassicrollers.club').replace(/\/$/,'');
 // Secure everywhere except local testing over http, like the admin cookie.
@@ -683,6 +683,14 @@ const publisher = process.env.PUBLISH_TO_GIT === '1' ? createPublisher({
   buildData: () => {
     const data = publicData(); const logs = readLogs();
     data.history = Object.fromEntries(data.members.map(m => [m.id, scoreHistory(logs, m.id).slice(0, 50)]));
+    // Each bowler's public page: games for the chart, and training attendance. Never check-in
+    // photos, faces or how a match was made.
+    data.portal = Object.fromEntries(data.members.map(m => {
+      const attendance = memberAttendance(m.id);
+      return [m.id, { games: memberGames(m.id).slice(0, 50), attendance: { ...attendance, sessions: attendance.sessions.slice(0, 30) } }];
+    }));
+    data.schedule = { days: TRAINING_DAYS };
+    data.promotion = PROMOTION;
     data.publishedAt = new Date().toISOString();
     return data;
   },
