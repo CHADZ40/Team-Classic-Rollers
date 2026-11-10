@@ -230,8 +230,8 @@
       "name": "SOPHAL MONY",
       "team": "Team C",
       "photo": "/uploads/1794322870678-ab75000df2b0.jpg",
-      "games": 0,
-      "scores": 0,
+      "games": 3,
+      "scores": 354,
       "goal": 150,
       "sortOrder": 17,
       "active": true,
@@ -332,7 +332,7 @@
     "aboutBody": "Team Classic Rollers brings Cambodian bowlers together to train, compete and improve. You'll find us working on spares, learning from each other and cheering just as loudly for a teammate's first strike as for a tournament win.",
     "aboutBody2": "We care about discipline, respect, teamwork and steady progress. Whether you're chasing your next tournament or still learning to read a scoresheet, there's a place for you here and people ready to help you grow."
   },
-  "updatedAt": "2026-11-10T15:11:08.115Z",
+  "updatedAt": "2026-11-10T15:11:26.952Z",
   "introductions": [],
   "news": [],
   "history": {
@@ -407,7 +407,15 @@
       }
     ],
     "sim-sreyneath": [],
-    "sophal-mony": [],
+    "sophal-mony": [
+      {
+        "timestamp": "2026-11-10T15:11:26.952Z",
+        "action": "member_stats_set",
+        "previousScores": 0,
+        "newScores": 354,
+        "reason": ""
+      }
+    ],
     "heang-kimhuoy": [],
     "sovannaroth-long": [
       {
@@ -431,5 +439,5 @@
     ],
     "daravan-bun": []
   },
-  "publishedAt": "2026-11-10T15:11:23.124Z"
+  "publishedAt": "2026-11-10T15:11:41.957Z"
 }
