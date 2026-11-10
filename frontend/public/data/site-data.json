@@ -62,8 +62,8 @@
       "name": "NORN NAKRY",
       "team": "Team A",
       "photo": "/uploads/1794323017105-bdd62e5d2548.png",
-      "games": 0,
-      "scores": 0,
+      "games": 36,
+      "scores": 5941,
       "goal": 200,
       "sortOrder": 5,
       "active": true,
@@ -332,7 +332,7 @@
     "aboutBody": "Team Classic Rollers brings Cambodian bowlers together to train, compete and improve. You'll find us working on spares, learning from each other and cheering just as loudly for a teammate's first strike as for a tournament win.",
     "aboutBody2": "We care about discipline, respect, teamwork and steady progress. Whether you're chasing your next tournament or still learning to read a scoresheet, there's a place for you here and people ready to help you grow."
   },
-  "updatedAt": "2026-11-10T15:03:58.885Z",
+  "updatedAt": "2026-11-10T15:06:21.781Z",
   "introductions": [],
   "news": [],
   "history": {
@@ -340,7 +340,15 @@
     "sovann-chheng": [],
     "eric": [],
     "chen-han-jun": [],
-    "norn-nakry": [],
+    "norn-nakry": [
+      {
+        "timestamp": "2026-11-10T15:06:21.786Z",
+        "action": "member_stats_set",
+        "previousScores": 0,
+        "newScores": 5941,
+        "reason": ""
+      }
+    ],
     "pich-eliza": [],
     "neo-eric-monyratanak": [],
     "vong-sokvattanac": [],
@@ -360,5 +368,5 @@
     "lyhour-roeun": [],
     "daravan-bun": []
   },
-  "publishedAt": "2026-11-10T15:04:25.144Z"
+  "publishedAt": "2026-11-10T15:06:36.789Z"
 }
