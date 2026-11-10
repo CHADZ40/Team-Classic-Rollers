@@ -61,7 +61,7 @@
       "slug": "norn-nakry",
       "name": "NORN NAKRY",
       "team": "Team A",
-      "photo": "assets/members/NAKRY TEAM A.png",
+      "photo": "/uploads/1794323017105-bdd62e5d2548.png",
       "games": 0,
       "scores": 0,
       "goal": 200,
@@ -332,7 +332,7 @@
     "aboutBody": "Team Classic Rollers brings Cambodian bowlers together to train, compete and improve. You'll find us working on spares, learning from each other and cheering just as loudly for a teammate's first strike as for a tournament win.",
     "aboutBody2": "We care about discipline, respect, teamwork and steady progress. Whether you're chasing your next tournament or still learning to read a scoresheet, there's a place for you here and people ready to help you grow."
   },
-  "updatedAt": "2026-11-10T15:03:07.376Z",
+  "updatedAt": "2026-11-10T15:03:38.153Z",
   "introductions": [],
   "news": [],
   "history": {
@@ -360,5 +360,5 @@
     "lyhour-roeun": [],
     "daravan-bun": []
   },
-  "publishedAt": "2026-11-10T15:03:22.373Z"
+  "publishedAt": "2026-11-10T15:03:53.157Z"
 }
