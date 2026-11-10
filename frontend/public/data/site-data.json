@@ -19,7 +19,7 @@
       "slug": "sovann-chheng",
       "name": "SOVANN CHHENG",
       "team": "Team A",
-      "photo": "assets/members/SOVANN TEAM A.png",
+      "photo": "/uploads/1794322460722-d18b82de15e5.jpg",
       "games": 0,
       "scores": 0,
       "goal": 200,
@@ -332,7 +332,7 @@
     "aboutBody": "Team Classic Rollers brings Cambodian bowlers together to train, compete and improve. You'll find us working on spares, learning from each other and cheering just as loudly for a teammate's first strike as for a tournament win.",
     "aboutBody2": "We care about discipline, respect, teamwork and steady progress. Whether you're chasing your next tournament or still learning to read a scoresheet, there's a place for you here and people ready to help you grow."
   },
-  "updatedAt": "2026-11-10T14:53:59.543Z",
+  "updatedAt": "2026-11-10T14:54:22.104Z",
   "introductions": [],
   "news": [],
   "history": {
@@ -360,5 +360,5 @@
     "lyhour-roeun": [],
     "daravan-bun": []
   },
-  "publishedAt": "2026-11-10T14:54:14.549Z"
+  "publishedAt": "2026-11-10T14:54:37.106Z"
 }
