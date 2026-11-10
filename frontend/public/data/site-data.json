@@ -481,5 +481,320 @@
     ],
     "daravan-bun": []
   },
-  "publishedAt": "2026-11-10T15:17:50.901Z"
+  "portal": {
+    "jojo": {
+      "games": [],
+      "attendance": {
+        "present": 0,
+        "total": 0,
+        "sessions": []
+      }
+    },
+    "sovann-chheng": {
+      "games": [
+        {
+          "at": "2026-11-10T15:08:28.518Z",
+          "kind": "corrected",
+          "games": 3,
+          "pins": 564
+        }
+      ],
+      "attendance": {
+        "present": 0,
+        "total": 0,
+        "sessions": []
+      }
+    },
+    "eric": {
+      "games": [
+        {
+          "at": "2026-11-10T15:07:59.056Z",
+          "kind": "corrected",
+          "games": 3,
+          "pins": 601
+        }
+      ],
+      "attendance": {
+        "present": 0,
+        "total": 0,
+        "sessions": []
+      }
+    },
+    "chen-han-jun": {
+      "games": [],
+      "attendance": {
+        "present": 0,
+        "total": 0,
+        "sessions": []
+      }
+    },
+    "norn-nakry": {
+      "games": [
+        {
+          "at": "2026-11-10T15:06:21.786Z",
+          "kind": "corrected",
+          "games": 36,
+          "pins": 5941
+        }
+      ],
+      "attendance": {
+        "present": 0,
+        "total": 0,
+        "sessions": []
+      }
+    },
+    "pich-eliza": {
+      "games": [],
+      "attendance": {
+        "present": 0,
+        "total": 0,
+        "sessions": []
+      }
+    },
+    "neo-eric-monyratanak": {
+      "games": [],
+      "attendance": {
+        "present": 0,
+        "total": 0,
+        "sessions": []
+      }
+    },
+    "vong-sokvattanac": {
+      "games": [],
+      "attendance": {
+        "present": 0,
+        "total": 0,
+        "sessions": []
+      }
+    },
+    "saroeurn-sok": {
+      "games": [
+        {
+          "at": "2026-11-10T15:08:55.574Z",
+          "kind": "corrected",
+          "games": 3,
+          "pins": 492
+        }
+      ],
+      "attendance": {
+        "present": 0,
+        "total": 0,
+        "sessions": []
+      }
+    },
+    "tha-nell-both": {
+      "games": [],
+      "attendance": {
+        "present": 0,
+        "total": 0,
+        "sessions": []
+      }
+    },
+    "sokhom-d-menghour": {
+      "games": [
+        {
+          "at": "2026-11-10T15:16:29.656Z",
+          "kind": "added",
+          "games": 3,
+          "note": "Score added by admin",
+          "pins": 507
+        }
+      ],
+      "attendance": {
+        "present": 0,
+        "total": 0,
+        "sessions": []
+      }
+    },
+    "heng-raboth": {
+      "games": [],
+      "attendance": {
+        "present": 0,
+        "total": 0,
+        "sessions": []
+      }
+    },
+    "roth-pisey": {
+      "games": [
+        {
+          "at": "2026-11-10T15:10:25.921Z",
+          "kind": "corrected",
+          "games": 3,
+          "pins": 437
+        }
+      ],
+      "attendance": {
+        "present": 0,
+        "total": 0,
+        "sessions": []
+      }
+    },
+    "phan-soksreymeas": {
+      "games": [
+        {
+          "at": "2026-11-10T15:16:01.277Z",
+          "kind": "added",
+          "games": 3,
+          "note": "Score added by admin",
+          "pins": 475
+        },
+        {
+          "at": "2026-11-10T15:15:20.797Z",
+          "kind": "corrected",
+          "games": 3,
+          "pins": 514
+        },
+        {
+          "at": "2026-11-10T15:12:13.124Z",
+          "kind": "added",
+          "games": 3,
+          "note": "Score added by admin"
+        }
+      ],
+      "attendance": {
+        "present": 0,
+        "total": 0,
+        "sessions": []
+      }
+    },
+    "srun-sophea": {
+      "games": [
+        {
+          "at": "2026-11-10T15:09:25.542Z",
+          "kind": "corrected",
+          "games": 3,
+          "pins": 459
+        },
+        {
+          "at": "2026-11-10T15:09:13.415Z",
+          "kind": "corrected",
+          "games": 3,
+          "pins": 153
+        }
+      ],
+      "attendance": {
+        "present": 0,
+        "total": 0,
+        "sessions": []
+      }
+    },
+    "sim-sreyneath": {
+      "games": [],
+      "attendance": {
+        "present": 0,
+        "total": 0,
+        "sessions": []
+      }
+    },
+    "sophal-mony": {
+      "games": [
+        {
+          "at": "2026-11-10T15:11:26.952Z",
+          "kind": "corrected",
+          "games": 3,
+          "pins": 354
+        }
+      ],
+      "attendance": {
+        "present": 0,
+        "total": 0,
+        "sessions": []
+      }
+    },
+    "heang-kimhuoy": {
+      "games": [
+        {
+          "at": "2026-11-10T15:15:49.613Z",
+          "kind": "added",
+          "games": 3,
+          "note": "Score added by admin",
+          "pins": 405
+        }
+      ],
+      "attendance": {
+        "present": 0,
+        "total": 0,
+        "sessions": []
+      }
+    },
+    "sovannaroth-long": {
+      "games": [
+        {
+          "at": "2026-11-10T15:09:51.843Z",
+          "kind": "corrected",
+          "games": 3,
+          "pins": 456
+        }
+      ],
+      "attendance": {
+        "present": 0,
+        "total": 0,
+        "sessions": []
+      }
+    },
+    "liyeanchhing-keav": {
+      "games": [],
+      "attendance": {
+        "present": 0,
+        "total": 0,
+        "sessions": []
+      }
+    },
+    "sim-sreynin": {
+      "games": [],
+      "attendance": {
+        "present": 0,
+        "total": 0,
+        "sessions": []
+      }
+    },
+    "lyhour-roeun": {
+      "games": [
+        {
+          "at": "2026-11-10T15:15:40.346Z",
+          "kind": "added",
+          "games": 5,
+          "note": "Score added by admin",
+          "pins": 591
+        },
+        {
+          "at": "2026-11-10T15:11:08.118Z",
+          "kind": "corrected",
+          "games": 3,
+          "pins": 387
+        }
+      ],
+      "attendance": {
+        "present": 0,
+        "total": 0,
+        "sessions": []
+      }
+    },
+    "daravan-bun": {
+      "games": [],
+      "attendance": {
+        "present": 0,
+        "total": 0,
+        "sessions": []
+      }
+    }
+  },
+  "schedule": {
+    "days": [
+      1,
+      3,
+      5
+    ]
+  },
+  "promotion": {
+    "Team C": {
+      "next": "Team B",
+      "average": 180
+    },
+    "Team B": {
+      "next": "Team A",
+      "average": 180
+    }
+  },
+  "publishedAt": "2026-11-10T15:59:53.487Z"
 }
