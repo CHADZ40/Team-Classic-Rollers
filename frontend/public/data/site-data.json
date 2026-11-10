@@ -189,7 +189,7 @@
       "team": "Team C",
       "photo": "assets/members/MEAS TEAM C.png",
       "games": 3,
-      "scores": 0,
+      "scores": 514,
       "goal": 150,
       "sortOrder": 14,
       "active": true,
@@ -332,7 +332,7 @@
     "aboutBody": "Team Classic Rollers brings Cambodian bowlers together to train, compete and improve. You'll find us working on spares, learning from each other and cheering just as loudly for a teammate's first strike as for a tournament win.",
     "aboutBody2": "We care about discipline, respect, teamwork and steady progress. Whether you're chasing your next tournament or still learning to read a scoresheet, there's a place for you here and people ready to help you grow."
   },
-  "updatedAt": "2026-11-10T15:12:13.123Z",
+  "updatedAt": "2026-11-10T15:15:20.794Z",
   "introductions": [],
   "news": [],
   "history": {
@@ -389,7 +389,15 @@
         "reason": ""
       }
     ],
-    "phan-soksreymeas": [],
+    "phan-soksreymeas": [
+      {
+        "timestamp": "2026-11-10T15:15:20.797Z",
+        "action": "member_stats_set",
+        "previousScores": 0,
+        "newScores": 514,
+        "reason": ""
+      }
+    ],
     "srun-sophea": [
       {
         "timestamp": "2026-11-10T15:09:25.542Z",
@@ -439,5 +447,5 @@
     ],
     "daravan-bun": []
   },
-  "publishedAt": "2026-11-10T15:12:28.127Z"
+  "publishedAt": "2026-11-10T15:15:35.801Z"
 }
