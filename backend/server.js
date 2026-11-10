@@ -8,6 +8,7 @@ const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
 const { registerAttendance, FRAME_ROUTES } = require("./attendance");
+const { createPublisher } = require("./publish");
 
 const app = express();
 const PORT = Number(process.env.PORT || 3100);
@@ -24,6 +25,7 @@ const SESSION_SECRET = process.env.SESSION_SECRET;
 // SESSION_SECRET signs every browser out.
 const TOKEN_TTL_SECONDS = 30 * 24 * 60 * 60;
 const INTRO_CAPTION_MAX = 280;
+const HISTORY_ACTIONS = ["score_added","score_removed","member_stats_set","game_request_approved"];
 const TELEGRAM_API = (process.env.TELEGRAM_API_BASE || "https://api.telegram.org").replace(/\/$/, "");
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "";
 // Chats allowed to receive score alerts and approve them. Anyone in a listed group can approve.
@@ -102,11 +104,14 @@ function readData() {
   }
   return data;
 }
+// Set when the admin runs on a laptop and publishes the website from it.
+let onPublicChange = () => {};
 function writeData(data) {
   data.updatedAt = new Date().toISOString();
   const temp = `${DATA_FILE}.tmp`;
   fs.writeFileSync(temp, JSON.stringify(data, null, 2));
   fs.renameSync(temp, DATA_FILE);
+  onPublicChange();
 }
 function writeAuditLog(action, details = {}) {
   try {
@@ -116,6 +121,7 @@ function writeAuditLog(action, details = {}) {
     const temp = `${LOG_FILE}.tmp`;
     fs.writeFileSync(temp, JSON.stringify(logs.slice(0, 5000), null, 2));
     fs.renameSync(temp, LOG_FILE);
+    if (HISTORY_ACTIONS.includes(action)) onPublicChange();
   } catch (error) { console.error("Failed to write audit log:", error.message); }
 }
 function cleanMember(m) {
@@ -351,10 +357,13 @@ app.post("/api/admin/logout", (_req,res) => {
   res.json({ ok: true });
 });
 app.get("/api/admin/site-data", requireAdmin, (_req,res) => res.json(readData()));
+function readLogs() { return fs.existsSync(LOG_FILE) ? JSON.parse(fs.readFileSync(LOG_FILE,"utf8")) : []; }
+function scoreHistory(logs, id) {
+  return logs.filter(l => String(l.memberId) === String(id) && HISTORY_ACTIONS.includes(l.action)).map(l=>({timestamp:l.timestamp,action:l.action,previousScores:l.previousValue ?? l.previousScores,newScores:l.newValue ?? l.newScores ?? l.scores,amount:l.amount ?? l.scoresAdded,gamesAdded:l.gamesAdded,reason:l.reason||l.details||""}));
+}
 app.get("/api/public/member-history/:id", (req,res) => {
   try {
-    const logs = fs.existsSync(LOG_FILE) ? JSON.parse(fs.readFileSync(LOG_FILE,"utf8")) : [];
-    const history = logs.filter(l => String(l.memberId) === String(req.params.id) && ["score_added","score_removed","member_stats_set","game_request_approved"].includes(l.action)).map(l=>({timestamp:l.timestamp,action:l.action,previousScores:l.previousValue ?? l.previousScores,newScores:l.newValue ?? l.newScores ?? l.scores,amount:l.amount ?? l.scoresAdded,gamesAdded:l.gamesAdded,reason:l.reason||l.details||""}));
+    const history = scoreHistory(readLogs(), req.params.id);
     res.set("Cache-Control","no-store"); res.json({history});
   } catch { res.status(500).json({error:"Unable to load score history."}); }
 });
@@ -666,6 +675,25 @@ app.post('/api/member/score-requests',memberAuth,upload.array('proofs',6),(req,r
 app.get('/api/member/score-requests',memberAuth,(req,res)=>res.json({requests:readRequests().filter(r=>String(r.memberId)===String(req.memberAccount.memberId)).map(r=>({id:r.id,games:r.games,scores:r.scores,status:r.status,createdAt:r.createdAt,reviewedAt:r.reviewedAt,reviewReason:r.reviewReason}))}));
 app.post('/api/admin/member-notifications',requireAdmin,(req,res)=>{const memberId=String(req.body.memberId||'');const title=String(req.body.title||'').trim().slice(0,120),message=String(req.body.message||'').trim().slice(0,2000);if(!title||!message)return res.status(400).json({error:'Title and message are required.'});const targets=memberId?readList('accounts').filter(a=>String(a.memberId)===memberId):readList('accounts');const rows=targets.map(a=>({id:crypto.randomUUID(),memberId:a.memberId,telegramId:a.telegramId,title,message,createdAt:new Date().toISOString(),read:false}));writeList('notifications',[...rows,...readList('notifications')].slice(0,5000));writeAuditLog('member_notification_created',{memberId:memberId||'all',count:rows.length,title});res.json({ok:true,count:rows.length});});
 const attendance = registerAttendance(app, { requireAdmin, readList, writeList, readData, writeAuditLog, adminUser: ADMIN_USER, photoDir: path.join(MEMBER_DIR, 'checkin-photos') });
+// Laptop mode: scripts/start-admin.sh turns this on. Every public change is pushed to GitHub,
+// and Vercel rebuilds the website. Score history goes along, since there's no server to ask.
+const publisher = process.env.PUBLISH_TO_GIT === '1' ? createPublisher({
+  repoDir: process.env.PUBLISH_REPO_DIR || path.join(__dirname, '..'),
+  uploadDir: UPLOAD_DIR,
+  buildData: () => {
+    const data = publicData(); const logs = readLogs();
+    data.history = Object.fromEntries(data.members.map(m => [m.id, scoreHistory(logs, m.id).slice(0, 50)]));
+    data.publishedAt = new Date().toISOString();
+    return data;
+  },
+}) : null;
+if (publisher) onPublicChange = publisher.schedule;
+app.get('/api/admin/publish', requireAdmin, (_req,res) => { res.set('Cache-Control','no-store'); res.json(publisher ? { enabled: true, ...publisher.state } : { enabled: false }); });
+app.post('/api/admin/publish', requireAdmin, (_req,res) => {
+  if (!publisher) return res.status(400).json({ error: 'Publishing only works when the admin runs from scripts/start-admin.sh.' });
+  publisher.publish();
+  res.json({ ok: true });
+});
 app.post('/api/admin/member-accounts/:telegramId/resend',requireAdmin,async(req,res)=>{const account=readList('accounts').find(a=>String(a.telegramId)===String(req.params.telegramId));if(!account)return res.status(404).json({error:'Account not found.'});const member=readData().members.find(m=>String(m.id)===String(account.memberId));if(!member)return res.status(404).json({error:'Member not found.'});const raw=crypto.randomBytes(24).toString('base64url'),now=Date.now(),tokens=readList('tokens').filter(t=>t.expiresAt>now&&!t.usedAt);tokens.push({id:crypto.randomUUID(),hash:crypto.createHash('sha256').update(raw).digest('hex'),memberId:String(member.id),createdAt:now,expiresAt:now+600000,createdBy:ADMIN_USER});writeList('tokens',tokens);const link=`https://t.me/${BOT_USERNAME}?start=${raw}`;const qr=await require('qrcode').toDataURL(link);res.json({ok:true,link,qr,expiresAt:new Date(now+600000).toISOString()});});
 
 // The public site is a different origin, so photos must be allowed to load there.

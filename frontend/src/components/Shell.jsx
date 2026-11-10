@@ -3,7 +3,7 @@ import { useEffect, useLayoutEffect, useRef } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router";
 import { motion, useReducedMotion, useScroll, useSpring, useTransform } from "motion/react";
 import Lenis from "lenis";
-import { SOCIALS, niceName, thumbPhoto } from "../lib/team.js";
+import { SOCIALS, STATIC_SITE, niceName, thumbPhoto } from "../lib/team.js";
 import { useMemberSession } from "../data/MemberSession.jsx";
 import { PAGES } from "../data/routes.js";
 import { Magnetic } from "./motion.jsx";
@@ -81,6 +81,7 @@ function ScrollManager({ lenis }) {
 // Signed-in members see their own photo and name here, which opens their portal.
 function MemberLink() {
   const { status, me } = useMemberSession();
+  if (STATIC_SITE) return null;
   if (status !== "in") return <Link to="/login" viewTransition className="nav-portal">Sign in</Link>;
   const { member } = me;
   const first = niceName(member.profile?.name || member.name).split(" ")[0];
@@ -167,7 +168,7 @@ function Footer() {
           <div>
             <p className="label">Members</p>
             <Link to="/submit" viewTransition>Submit a score</Link>
-            {status === "in" ? <Link to="/portal" viewTransition>My portal</Link> : <Link to="/login" viewTransition>Member sign in</Link>}
+            {STATIC_SITE ? null : status === "in" ? <Link to="/portal" viewTransition>My portal</Link> : <Link to="/login" viewTransition>Member sign in</Link>}
           </div>
           <div>
             <p className="label">Follow</p>

@@ -3,7 +3,7 @@ import { useSearchParams } from "react-router";
 import { AnimatePresence, motion } from "motion/react";
 import { Lines } from "../components/motion.jsx";
 import { useSiteData } from "../data/SiteData.jsx";
-import { API_BASE, activeMembers } from "../lib/team.js";
+import { API_BASE, SOCIALS, STATIC_SITE, activeMembers } from "../lib/team.js";
 
 const MAX_FILES = 6;
 const MAX_BYTES = 5 * 1024 * 1024;
@@ -28,7 +28,27 @@ function Burst() {
   );
 }
 
+// The published website has no server to receive scores, so members send them to the team.
+function SendToTeam() {
+  return (
+    <section className="wrap submit">
+      <div className="submit-intro">
+        <p className="label label--accent">Scores</p>
+        <Lines as="h1" className="mega mega--page" lines={["Send your", "score"]} immediate />
+        <p className="lede">Message the team with your games, total pins and a photo of the lane screen. An admin adds it to the scoreboard.</p>
+        <div className="actions">
+          {SOCIALS.slice(0, 1).map(({ label, href }) => <a key={label} className="pill" href={href} target="_blank" rel="noopener noreferrer">Message us on {label}</a>)}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default function Submit() {
+  return STATIC_SITE ? <SendToTeam /> : <SubmitForm />;
+}
+
+function SubmitForm() {
   const { data } = useSiteData();
   const [params] = useSearchParams();
   const formRef = useRef(null);

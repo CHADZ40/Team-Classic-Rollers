@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import seed from "../../../backend/seed/site-data.json";
-import { API_BASE } from "../lib/team.js";
+import { API_BASE, STATIC_SITE } from "../lib/team.js";
 
 const CACHE_KEY = "tcr-site-data";
 
@@ -30,7 +30,7 @@ export function SiteDataProvider({ children }) {
 
   useEffect(() => {
     let cancelled = false;
-    fetch(`${API_BASE}/api/public/site-data`, { cache: "no-store" })
+    fetch(STATIC_SITE ? "/data/site-data.json" : `${API_BASE}/api/public/site-data`, { cache: "no-store" })
       .then((response) => {
         if (!response.ok) throw new Error(String(response.status));
         return response.json();

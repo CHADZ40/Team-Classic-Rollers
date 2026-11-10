@@ -1,7 +1,7 @@
 // Who's signed in. The sign-in cookie belongs to the API, so the site asks it once when it
 // loads. Everything that changes for members (the menu, the portal) reads from here.
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { API_BASE } from "../lib/team.js";
+import { API_BASE, STATIC_SITE } from "../lib/team.js";
 
 const MemberContext = createContext(null);
 
@@ -13,7 +13,7 @@ export async function memberApi(path, options = {}) {
 }
 
 export function MemberSessionProvider({ children }) {
-  const [state, setState] = useState({ status: "loading", me: null });
+  const [state, setState] = useState({ status: STATIC_SITE ? "out" : "loading", me: null });
 
   const refresh = useCallback(async () => {
     try {
@@ -24,7 +24,8 @@ export function MemberSessionProvider({ children }) {
     }
   }, []);
 
-  useEffect(() => { refresh(); }, [refresh]);
+  // A published website has no server to sign in to.
+  useEffect(() => { if (!STATIC_SITE) refresh(); }, [refresh]);
 
   // `remember` is the member's answer to "keep me signed in on this device?"
   const signIn = useCallback(async (ticket, remember) => {

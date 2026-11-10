@@ -2,14 +2,16 @@
 // Runs after `vite build`. Writes a copy of the app shell for every known address,
 // each with its own title and description, so deep links and social previews work
 // on any static host. Old .html addresses get a copy too; the app redirects them.
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { PAGES, SITE_URL, memberMeta } from "../src/data/routes.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const dist = join(here, "..", "dist");
-const seed = JSON.parse(readFileSync(join(here, "../../backend/seed/site-data.json"), "utf8"));
+// The published data has members added in the admin since the seed was written.
+const published = join(here, "../public/data/site-data.json");
+const seed = JSON.parse(readFileSync(existsSync(published) ? published : join(here, "../../backend/seed/site-data.json"), "utf8"));
 const shell = readFileSync(join(dist, "index.html"), "utf8");
 const esc = (s) => s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
 

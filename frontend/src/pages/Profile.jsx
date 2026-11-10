@@ -6,7 +6,7 @@ import { Icon, usePageMeta } from "../components/Shell.jsx";
 import { useSiteData } from "../data/SiteData.jsx";
 import { memberMeta } from "../data/routes.js";
 import {
-  API_BASE, TEAM_COLOR, activeMembers, bySortOrder, formatNumber, fullPhoto, memberPath, niceName, posterPhoto, rankedMembers, stats,
+  API_BASE, STATIC_SITE, TEAM_COLOR, activeMembers, bySortOrder, formatNumber, fullPhoto, memberPath, niceName, posterPhoto, rankedMembers, stats,
 } from "../lib/team.js";
 
 function GoalRing({ percent, goal, avg, games }) {
@@ -31,8 +31,11 @@ function GoalRing({ percent, goal, avg, games }) {
 }
 
 function History({ id }) {
+  const { data } = useSiteData();
   const [state, setState] = useState({ status: "loading", rows: [] });
   useEffect(() => {
+    // The published data already holds each bowler's history.
+    if (STATIC_SITE) { setState({ status: "done", rows: data.history?.[id] || [] }); return undefined; }
     let cancelled = false;
     setState({ status: "loading", rows: [] });
     fetch(`${API_BASE}/api/public/member-history/${encodeURIComponent(id)}`)
@@ -40,7 +43,7 @@ function History({ id }) {
       .then((json) => { if (!cancelled) setState({ status: "done", rows: json.history || [] }); })
       .catch(() => { if (!cancelled) setState({ status: "error", rows: [] }); });
     return () => { cancelled = true; };
-  }, [id]);
+  }, [id, data]);
   if (state.status === "loading") return <p className="dim">Loading score history…</p>;
   if (state.status === "error") return <p className="dim">Score history is unavailable right now.</p>;
   if (!state.rows.length) return <p className="dim">No score changes recorded yet.</p>;
