@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { ActionButton, Loading, PageHead, SPRING, Tabs, useFeedback } from "../components/ui.jsx";
 import { useAdmin } from "../data/store.jsx";
@@ -7,13 +7,14 @@ import { api, niceName, number, plural, suggestedMember } from "../lib/api.js";
 function Summary({ request }) {
   const proofs = request.proofs || [];
   const verified = request.source === "member-portal";
+  const fromWebsite = request.source === "website";
   const status = { pending: "Waiting", approved: "Approved", rejected: "Rejected" }[request.status];
   return (
     <>
       <div className="request-top">
         <div>
           <h2>{niceName(request.name)}</h2>
-          <p className="dim small">{new Date(request.createdAt).toLocaleString()} · {verified ? "Member Portal (verified)" : "Public form (name not verified)"}</p>
+          <p className="dim small">{new Date(request.createdAt).toLocaleString()} · {verified ? "Member Portal (verified)" : fromWebsite ? "Website form (name not verified)" : "Public form (name not verified)"}</p>
         </div>
         <span className={`pill-state ${request.status}`}>{status}</span>
       </div>
@@ -68,6 +69,27 @@ function PendingCard({ request, members, onDecided }) {
   );
 }
 
+// Laptop mode: scores members send from the website arrive here when the admin collects them.
+function WebsiteInbox({ onAdded }) {
+  const [state, setState] = useState(null);
+  const load = useCallback(() => api("/api/admin/inbox").then(setState).catch(() => {}), []);
+  useEffect(() => { load(); const timer = setInterval(load, 20000); return () => clearInterval(timer); }, [load]);
+  if (!state?.enabled) return null;
+  const check = async () => {
+    const before = state.added;
+    const next = await api("/api/admin/inbox/check", { method: "POST" }).catch((failure) => ({ ...state, error: failure.message }));
+    setState(next);
+    if (next.added !== before) onAdded();
+  };
+  const when = state.lastCheckedAt ? new Date(state.lastCheckedAt).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) : "not yet";
+  return (
+    <div className={`inbox${state.error ? " is-error" : ""}`}>
+      <span>{state.error ? `Couldn't check the website: ${state.error}` : `Scores from the website · checked ${when}`}</span>
+      <ActionButton className="btn btn-secondary btn-small" busyText="Checking…" onAction={check}>Check now</ActionButton>
+    </div>
+  );
+}
+
 export default function Requests() {
   const { loaded, requests, members, refresh } = useAdmin();
   const [tab, setTab] = useState("pending");
@@ -76,6 +98,7 @@ export default function Requests() {
   return (
     <>
       <PageHead eyebrow="Review" title="Score requests" intro="Check the proof, confirm who it belongs to, then approve or reject. New requests appear here by themselves." />
+      <WebsiteInbox onAdded={refresh} />
       <div className="toolbar">
         <Tabs id="requests" label="Filter requests" value={tab} onChange={setTab} options={[
           { value: "pending", label: `Waiting${count("pending")}` },

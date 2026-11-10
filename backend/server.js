@@ -9,6 +9,7 @@ const fs = require("fs");
 const path = require("path");
 const { registerAttendance, FRAME_ROUTES } = require("./attendance");
 const { createPublisher } = require("./publish");
+const { createInbox } = require("./score-inbox");
 
 const app = express();
 const PORT = Number(process.env.PORT || 3100);
@@ -697,6 +698,16 @@ const publisher = process.env.PUBLISH_TO_GIT === '1' ? createPublisher({
 }) : null;
 if (publisher) onPublicChange = publisher.schedule;
 app.get('/api/admin/publish', requireAdmin, (_req,res) => { res.set('Cache-Control','no-store'); res.json(publisher ? { enabled: true, ...publisher.state } : { enabled: false }); });
+// Laptop mode: scores sent from the website wait on Vercel until the admin collects them.
+const inbox = process.env.SCORE_INBOX_URL && process.env.SCORE_INBOX_KEY ? createInbox({
+  url: process.env.SCORE_INBOX_URL, key: process.env.SCORE_INBOX_KEY, uploadDir: UPLOAD_DIR, readRequests, writeRequests,
+  onAdded: (item) => writeAuditLog('game_request_submitted', { requestId: item.id, requester: item.name, games: item.games, scores: item.scores, source: 'website' }),
+}) : null;
+app.get('/api/admin/inbox', requireAdmin, (_req,res) => { res.set('Cache-Control','no-store'); res.json(inbox ? { enabled: true, ...inbox.state } : { enabled: false }); });
+app.post('/api/admin/inbox/check', requireAdmin, async (_req,res) => {
+  if (!inbox) return res.status(400).json({ error: 'The website inbox is not set up on this laptop.' });
+  res.json({ enabled: true, ...(await inbox.check()) });
+});
 app.post('/api/admin/publish', requireAdmin, (_req,res) => {
   if (!publisher) return res.status(400).json({ error: 'Publishing only works when the admin runs from scripts/start-admin.sh.' });
   publisher.publish();

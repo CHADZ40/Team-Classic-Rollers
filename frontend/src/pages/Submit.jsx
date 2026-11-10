@@ -3,9 +3,12 @@ import { useSearchParams } from "react-router";
 import { AnimatePresence, motion } from "motion/react";
 import { Lines } from "../components/motion.jsx";
 import { useSiteData } from "../data/SiteData.jsx";
-import { API_BASE, SOCIALS, STATIC_SITE, activeMembers } from "../lib/team.js";
+import { API_BASE, STATIC_SITE, activeMembers } from "../lib/team.js";
+import { shrinkPhoto } from "../lib/photos.js";
 
-const MAX_FILES = 6;
+// The published website sends to its own small inbox on Vercel; with a server, to the server.
+const ENDPOINT = STATIC_SITE ? "/api/score-requests" : `${API_BASE}/api/public/game-requests`;
+const MAX_FILES = STATIC_SITE ? 4 : 6;
 const MAX_BYTES = 5 * 1024 * 1024;
 const digits = (value) => String(value || "").replace(/\D/g, "");
 
@@ -28,24 +31,8 @@ function Burst() {
   );
 }
 
-// The published website has no server to receive scores, so members send them to the team.
-function SendToTeam() {
-  return (
-    <section className="wrap submit">
-      <div className="submit-intro">
-        <p className="label label--accent">Scores</p>
-        <Lines as="h1" className="mega mega--page" lines={["Send your", "score"]} immediate />
-        <p className="lede">Message the team with your games, total pins and a photo of the lane screen. An admin adds it to the scoreboard.</p>
-        <div className="actions">
-          {SOCIALS.slice(0, 1).map(({ label, href }) => <a key={label} className="pill" href={href} target="_blank" rel="noopener noreferrer">Message us on {label}</a>)}
-        </div>
-      </div>
-    </section>
-  );
-}
-
 export default function Submit() {
-  return STATIC_SITE ? <SendToTeam /> : <SubmitForm />;
+  return <SubmitForm />;
 }
 
 function SubmitForm() {
@@ -67,11 +54,17 @@ function SubmitForm() {
   const submit = async (event) => {
     event.preventDefault();
     setNotice(null);
-    if (files.length > MAX_FILES) { setNotice({ kind: "error", text: "Please upload no more than 6 pictures." }); return; }
-    if (files.some((file) => file.size > MAX_BYTES)) { setNotice({ kind: "error", text: "Each picture must be 5 MB or smaller." }); return; }
+    if (files.length > MAX_FILES) { setNotice({ kind: "error", text: `Please upload no more than ${MAX_FILES} pictures.` }); return; }
+    // Photos are shrunk before sending on the published website, so big ones are fine there.
+    if (!STATIC_SITE && files.some((file) => file.size > MAX_BYTES)) { setNotice({ kind: "error", text: "Each picture must be 5 MB or smaller." }); return; }
     setBusy(true);
     try {
-      const response = await fetch(`${API_BASE}/api/public/game-requests`, { method: "POST", body: new FormData(formRef.current) });
+      const body = new FormData(formRef.current);
+      if (STATIC_SITE) {
+        body.delete("proofs");
+        for (const file of files.slice(0, MAX_FILES)) body.append("proofs", await shrinkPhoto(file));
+      }
+      const response = await fetch(ENDPOINT, { method: "POST", body });
       const json = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(json.error || "Unable to submit request.");
       formRef.current.reset();
@@ -117,6 +110,8 @@ function SubmitForm() {
           )}
         </AnimatePresence>
 
+        {/* Left empty by people. Bots fill it in, and their requests are ignored. */}
+        <input name="website" type="text" tabIndex={-1} autoComplete="off" aria-hidden="true" className="sr-only" />
         <label className="field">
           <span>Your name</span>
           <input name="name" type="text" list="roster" required maxLength={100} autoComplete="name" placeholder="Start typing your name" value={name} onChange={(event) => setName(event.target.value)} />

@@ -34,6 +34,28 @@ if [[ ! -f "$SETTINGS" ]]; then
   printf 'ADMIN_PASSWORD=%q\nSESSION_SECRET=%s\n' "$pw1" "$(openssl rand -hex 32)" > "$SETTINGS"
   unset pw1 pw2
 fi
+# Once: where the website's score inbox is, and a private key only this laptop and Vercel know.
+if ! grep -q '^SCORE_INBOX_URL=' "$SETTINGS"; then
+  echo
+  echo "Members can send scores from the website. To collect them here, enter your website"
+  echo "address from Vercel (like https://team-classic-rollers.vercel.app), or press Enter to skip."
+  read -r -p "Website address: " site
+  site="${site%/}"
+  key="$(openssl rand -hex 24)"
+  if [[ -n "$site" ]]; then
+    printf 'SCORE_INBOX_URL=%s/api/score-requests\nSCORE_INBOX_KEY=%s\n' "$site" "$key" >> "$SETTINGS"
+    echo
+    echo "Last step, in Vercel: open your project, Settings > Environment Variables, and add"
+    echo "  Name:  SCORE_INBOX_KEY"
+    echo "  Value: $key"
+    echo "Then redeploy. (This key is also saved in $SETTINGS.)"
+    echo
+    read -r -p "Press Enter when that's done… " _
+  else
+    printf 'SCORE_INBOX_URL=\nSCORE_INBOX_KEY=\n' >> "$SETTINGS"
+    echo "Skipped. To set it up later, delete the SCORE_INBOX lines in $SETTINGS and start again."
+  fi
+fi
 set -a; source "$SETTINGS"; set +a
 
 # A new laptop starts from what the website already shows, rather than an empty roster.
