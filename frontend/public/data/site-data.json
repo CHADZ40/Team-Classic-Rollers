@@ -20,8 +20,8 @@
       "name": "SOVANN CHHENG",
       "team": "Team A",
       "photo": "/uploads/1794322460722-d18b82de15e5.jpg",
-      "games": 6,
-      "scores": 1798,
+      "games": 3,
+      "scores": 564,
       "goal": 200,
       "sortOrder": 2,
       "active": true,
@@ -332,12 +332,19 @@
     "aboutBody": "Team Classic Rollers brings Cambodian bowlers together to train, compete and improve. You'll find us working on spares, learning from each other and cheering just as loudly for a teammate's first strike as for a tournament win.",
     "aboutBody2": "We care about discipline, respect, teamwork and steady progress. Whether you're chasing your next tournament or still learning to read a scoresheet, there's a place for you here and people ready to help you grow."
   },
-  "updatedAt": "2026-11-10T16:19:47.776Z",
+  "updatedAt": "2026-11-10T16:21:23.829Z",
   "introductions": [],
   "news": [],
   "history": {
     "jojo": [],
     "sovann-chheng": [
+      {
+        "timestamp": "2026-11-10T16:21:23.830Z",
+        "action": "member_stats_set",
+        "previousScores": 1798,
+        "newScores": 564,
+        "reason": ""
+      },
       {
         "timestamp": "2026-11-10T16:19:47.777Z",
         "action": "score_added",
@@ -500,6 +507,12 @@
     },
     "sovann-chheng": {
       "games": [
+        {
+          "at": "2026-11-10T16:21:23.830Z",
+          "kind": "corrected",
+          "games": 3,
+          "pins": 564
+        },
         {
           "at": "2026-11-10T16:19:47.772Z",
           "kind": "added",
@@ -811,5 +824,5 @@
       "average": 180
     }
   },
-  "publishedAt": "2026-11-10T16:20:20.470Z"
+  "publishedAt": "2026-11-10T16:21:27.233Z"
 }
