@@ -616,15 +616,7 @@
       "attendance": {
         "present": 0,
         "total": 0,
-        "sessions": [
-          {
-            "id": "002a8147-deda-4f32-ab63-cb897895ad19",
-            "title": "Training",
-            "date": "2026-11-11",
-            "location": "",
-            "status": "open"
-          }
-        ]
+        "sessions": []
       }
     },
     "neo-eric-monyratanak": {
@@ -632,15 +624,7 @@
       "attendance": {
         "present": 0,
         "total": 0,
-        "sessions": [
-          {
-            "id": "002a8147-deda-4f32-ab63-cb897895ad19",
-            "title": "Training",
-            "date": "2026-11-11",
-            "location": "",
-            "status": "open"
-          }
-        ]
+        "sessions": []
       }
     },
     "vong-sokvattanac": {
@@ -727,15 +711,7 @@
       "attendance": {
         "present": 0,
         "total": 0,
-        "sessions": [
-          {
-            "id": "002a8147-deda-4f32-ab63-cb897895ad19",
-            "title": "Training",
-            "date": "2026-11-11",
-            "location": "",
-            "status": "open"
-          }
-        ]
+        "sessions": []
       }
     },
     "roth-pisey": {
@@ -786,15 +762,7 @@
       "attendance": {
         "present": 0,
         "total": 0,
-        "sessions": [
-          {
-            "id": "002a8147-deda-4f32-ab63-cb897895ad19",
-            "title": "Training",
-            "date": "2026-11-11",
-            "location": "",
-            "status": "open"
-          }
-        ]
+        "sessions": []
       }
     },
     "srun-sophea": {
@@ -831,15 +799,7 @@
       "attendance": {
         "present": 0,
         "total": 0,
-        "sessions": [
-          {
-            "id": "002a8147-deda-4f32-ab63-cb897895ad19",
-            "title": "Training",
-            "date": "2026-11-11",
-            "location": "",
-            "status": "open"
-          }
-        ]
+        "sessions": []
       }
     },
     "sophal-mony": {
@@ -878,15 +838,7 @@
       "attendance": {
         "present": 0,
         "total": 0,
-        "sessions": [
-          {
-            "id": "002a8147-deda-4f32-ab63-cb897895ad19",
-            "title": "Training",
-            "date": "2026-11-11",
-            "location": "",
-            "status": "open"
-          }
-        ]
+        "sessions": []
       }
     },
     "sovannaroth-long": {
@@ -917,15 +869,7 @@
       "attendance": {
         "present": 0,
         "total": 0,
-        "sessions": [
-          {
-            "id": "002a8147-deda-4f32-ab63-cb897895ad19",
-            "title": "Training",
-            "date": "2026-11-11",
-            "location": "",
-            "status": "open"
-          }
-        ]
+        "sessions": []
       }
     },
     "sim-sreynin": {
@@ -933,15 +877,7 @@
       "attendance": {
         "present": 0,
         "total": 0,
-        "sessions": [
-          {
-            "id": "002a8147-deda-4f32-ab63-cb897895ad19",
-            "title": "Training",
-            "date": "2026-11-11",
-            "location": "",
-            "status": "open"
-          }
-        ]
+        "sessions": []
       }
     },
     "lyhour-roeun": {
@@ -979,15 +915,7 @@
       "attendance": {
         "present": 0,
         "total": 0,
-        "sessions": [
-          {
-            "id": "002a8147-deda-4f32-ab63-cb897895ad19",
-            "title": "Training",
-            "date": "2026-11-11",
-            "location": "",
-            "status": "open"
-          }
-        ]
+        "sessions": []
       }
     }
   },
@@ -1008,5 +936,5 @@
       "average": 180
     }
   },
-  "publishedAt": "2026-11-11T14:07:19.397Z"
+  "publishedAt": "2026-11-11T14:08:29.251Z"
 }
