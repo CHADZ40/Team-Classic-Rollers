@@ -748,15 +748,15 @@
         }
       ],
       "attendance": {
-        "present": 0,
-        "total": 0,
+        "present": 1,
+        "total": 1,
         "sessions": [
           {
             "id": "002a8147-deda-4f32-ab63-cb897895ad19",
             "title": "Training",
             "date": "2026-11-11",
             "location": "",
-            "status": "open"
+            "status": "present"
           }
         ]
       }
@@ -1008,5 +1008,5 @@
       "average": 180
     }
   },
-  "publishedAt": "2026-11-11T13:57:57.119Z"
+  "publishedAt": "2026-11-11T13:58:57.403Z"
 }
