@@ -7,7 +7,7 @@ import { formatNumber, stats } from "../lib/team.js";
 
 export const DAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 export const DAY_LONG = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-export const STATUS = { present: "Present", absent: "Absent", missed: "No check-in", open: "Open", pending: "Waiting", approved: "Approved", rejected: "Not approved" };
+export const STATUS = { present: "Present", absent: "Absent", missed: "Absent", open: "Open", pending: "Waiting", approved: "Approved", rejected: "Not approved" };
 
 const toDate = (value) => (/^\d{4}-\d{2}-\d{2}$/.test(String(value)) ? new Date(`${value}T12:00:00`) : new Date(value));
 export const shortDate = (value) => toDate(value).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
@@ -168,7 +168,6 @@ const ROWS_SHOWN = 10;
 const KINDS = [
   { key: "present", label: "Present", className: "is-present" },
   { key: "absent", label: "Absent", className: "is-absent" },
-  { key: "missed", label: "No check-in", className: "is-missed" },
 ];
 
 function AttendanceRing({ counts, total }) {
@@ -198,12 +197,9 @@ function AttendanceRing({ counts, total }) {
 export function AttendanceReport({ attendance, schedule }) {
   const [showAll, setShowAll] = useState(false);
   const total = attendance.total || 0;
-  const counts = {
-    present: attendance.present || 0,
-    absent: attendance.absent ?? 0,
-    // Older data has no separate count; anything not present or absent had no check-in.
-    missed: attendance.missed ?? Math.max(0, total - (attendance.present || 0) - (attendance.absent || 0)),
-  };
+  // No check-in counts as absent: every class is either present or absent.
+  const present = attendance.present || 0;
+  const counts = { present, absent: Math.max(0, total - present) };
   const days = (schedule?.days || []).map((d) => DAY_LONG[d]);
   const sessions = attendance.sessions.filter((s) => s.status !== "open");
   const rows = showAll ? sessions : sessions.slice(0, ROWS_SHOWN);
@@ -227,7 +223,7 @@ export function AttendanceReport({ attendance, schedule }) {
         <tbody>
           {rows.map((s) => {
             const date = toDate(s.date);
-            const kind = KINDS.find((k) => k.key === s.status) || KINDS[2];
+            const kind = s.status === "present" ? KINDS[0] : KINDS[1];
             return (
               <tr key={s.id}>
                 <td><span className={`register-dot ${kind.className}`} /></td>

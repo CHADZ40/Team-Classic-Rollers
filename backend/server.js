@@ -647,12 +647,13 @@ function memberAttendance(memberId) {
     .sort((a, b) => String(b.date).localeCompare(String(a.date)) || String(b.createdAt).localeCompare(String(a.createdAt)));
   const firstDate = sessions.filter(t => rows.has(t.id)).map(t => String(t.date)).sort()[0];
   const list = sessions
-    .map(t => { const row = rows.get(t.id); return { id: t.id, title: t.title, date: t.date, location: t.location || '', status: row ? row.status : t.open === true ? 'open' : 'missed' }; })
+    .map(t => { const row = rows.get(t.id); return { id: t.id, title: t.title, date: t.date, location: t.location || '', status: row ? row.status : t.open === true ? 'open' : 'absent' }; })
     .filter(t => t.status === 'open' || (firstDate && String(t.date) >= firstDate));
   const counted = list.filter(t => t.status !== 'open');
   const count = (status) => counted.filter(t => t.status === status).length;
-  // "missed" means no record at all; "absent" means an admin marked them absent.
-  return { present: count('present'), absent: count('absent'), missed: count('missed'), total: counted.length, sessions: list.slice(0, 100) };
+  // No check-in counts as absent, so everything that isn't present is absent.
+  const present = count('present');
+  return { present, absent: counted.length - present, total: counted.length, sessions: list.slice(0, 100) };
 }
 // A member's games from the activity log, newest first. When an admin adds games and pins
 // for the same visit, the two log entries become one line.
