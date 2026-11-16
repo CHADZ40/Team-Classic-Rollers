@@ -162,86 +162,86 @@ export function GameRow({ row }) {
   );
 }
 
-// Attendance laid out like a class register: the overall rate, the totals, and every class.
+// Attendance laid out like a class register: a ring of every class, the score, and each class.
 const pct = (part, whole) => (whole ? Math.round((part / whole) * 100) : 0);
-const ATTENDANCE_TABS = [
-  { value: "all", label: "All" },
-  { value: "attended", label: "Attended" },
-  { value: "missed", label: "Missed" },
-];
 const ROWS_SHOWN = 10;
+const KINDS = [
+  { key: "present", label: "Present", className: "is-present" },
+  { key: "absent", label: "Absent", className: "is-absent" },
+  { key: "missed", label: "No check-in", className: "is-missed" },
+];
+
+function AttendanceRing({ counts, total }) {
+  const r = 54, c = 2 * Math.PI * r, gap = total > 1 ? 2 : 0;
+  let offset = 0;
+  return (
+    <div className="ring-chart">
+      <svg viewBox="0 0 140 140" role="img" aria-label={KINDS.map((k) => `${counts[k.key]} ${k.label}`).join(", ")}>
+        <circle cx="70" cy="70" r={r} className="ring-chart-track" />
+        {KINDS.filter((k) => counts[k.key] > 0).map((k) => {
+          const length = (counts[k.key] / total) * c;
+          const piece = (
+            <circle key={k.key} cx="70" cy="70" r={r} className={`ring-chart-part ${k.className}`}
+              strokeDasharray={`${Math.max(0, length - gap)} ${c}`} strokeDashoffset={-offset} transform="rotate(-90 70 70)">
+              <title>{`${counts[k.key]} ${k.label}`}</title>
+            </circle>
+          );
+          offset += length;
+          return piece;
+        })}
+      </svg>
+      <div className="ring-chart-middle"><b>{total}</b><span>{total === 1 ? "Class" : "Classes"} total</span></div>
+    </div>
+  );
+}
 
 export function AttendanceReport({ attendance, schedule }) {
-  const [tab, setTab] = useState("all");
   const [showAll, setShowAll] = useState(false);
   const total = attendance.total || 0;
-  const attended = attendance.present || 0;
-  // Older published data has no separate counts; everything not attended counts as missed.
-  const absent = attendance.absent ?? 0;
-  const noShow = attendance.missed ?? Math.max(0, total - attended - absent);
-  const missed = absent + noShow;
+  const counts = {
+    present: attendance.present || 0,
+    absent: attendance.absent ?? 0,
+    // Older data has no separate count; anything not present or absent had no check-in.
+    missed: attendance.missed ?? Math.max(0, total - (attendance.present || 0) - (attendance.absent || 0)),
+  };
   const days = (schedule?.days || []).map((d) => DAY_LONG[d]);
-
   const sessions = attendance.sessions.filter((s) => s.status !== "open");
-  const shown = sessions.filter((s) => tab === "all" || (tab === "attended" ? s.status === "present" : s.status !== "present"));
-  const rows = showAll ? shown : shown.slice(0, ROWS_SHOWN);
+  const rows = showAll ? sessions : sessions.slice(0, ROWS_SHOWN);
 
   if (!total) {
     return <p className="dim">Attendance shows here after the first class{days.length ? `. Classes are every ${listOf(days)}.` : "."}</p>;
   }
   return (
     <div className="register">
-      <div className="register-top">
-        <div className="register-rate">
-          <b>{pct(attended, total)}%</b>
-          <span>Attendance</span>
-        </div>
-        <dl className="register-totals">
-          <div><dt>Total classes</dt><dd>{total}</dd></div>
-          <div className="is-attended"><dt>Attended</dt><dd>{attended}<small>{pct(attended, total)}%</small></dd></div>
-          <div className="is-missed"><dt>Missed</dt><dd>{missed}<small>{pct(missed, total)}%</small></dd></div>
-        </dl>
+      <div className="register-summary">
+        <AttendanceRing counts={counts} total={total} />
+        <ul className="register-legend">
+          {KINDS.map((k) => <li key={k.key} className={k.className}><b>{counts[k.key]}</b> {k.label}</li>)}
+        </ul>
+        <div className="register-score"><b>{pct(counts.present, total)}%</b><span>Attendance score</span></div>
       </div>
-
-      <div className="register-bar" role="img" aria-label={`Attended ${attended} of ${total} classes, missed ${missed}.`}>
-        {attended > 0 && <i className="is-attended" style={{ flexGrow: attended }} />}
-        {absent > 0 && <i className="is-absent" style={{ flexGrow: absent }} />}
-        {noShow > 0 && <i className="is-noshow" style={{ flexGrow: noShow }} />}
-      </div>
-      <ul className="register-legend">
-        <li className="is-attended">Attended {attended}</li>
-        <li className="is-absent">Marked absent {absent}</li>
-        <li className="is-noshow">No check-in {noShow}</li>
-      </ul>
       {days.length > 0 && <p className="dim register-note">Counted from the first class attended. Classes are every {listOf(days)}.</p>}
 
-      <div className="register-tabs" role="tablist" aria-label="Show classes">
-        {ATTENDANCE_TABS.map((item) => (
-          <button key={item.value} type="button" role="tab" aria-selected={tab === item.value} onClick={() => { setTab(item.value); setShowAll(false); }}>
-            {item.label}
-          </button>
-        ))}
-      </div>
-      {rows.length ? (
-        <table className="register-table">
-          <thead><tr><th>Date</th><th className="hide-sm">Day</th><th>Class</th><th>Status</th></tr></thead>
-          <tbody>
-            {rows.map((s) => {
-              const date = toDate(s.date);
-              return (
-                <tr key={s.id}>
-                  <td className="mono">{date.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</td>
-                  <td className="hide-sm">{DAY_LONG[date.getDay()]}</td>
-                  <td>{s.title}{s.location ? <small>{s.location}</small> : null}</td>
-                  <td><span className={`state is-${s.status}`}>{STATUS[s.status]}</span></td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      ) : <p className="dim">No classes here.</p>}
-      {shown.length > ROWS_SHOWN && (
-        <button type="button" className="text-button" onClick={() => setShowAll((v) => !v)}>{showAll ? "Show fewer" : `Show all ${shown.length}`}</button>
+      <table className="register-table">
+        <thead><tr><th aria-label="Status colour" /><th>Date</th><th>Day</th><th>Status</th><th className="num">% Points</th></tr></thead>
+        <tbody>
+          {rows.map((s) => {
+            const date = toDate(s.date);
+            const kind = KINDS.find((k) => k.key === s.status) || KINDS[2];
+            return (
+              <tr key={s.id}>
+                <td><span className={`register-dot ${kind.className}`} /></td>
+                <td>{date.toLocaleDateString("en-GB", { day: "numeric", month: "short" })}</td>
+                <td><span className="day-long">{DAY_LONG[date.getDay()]}</span><span className="day-short">{DAY_SHORT[date.getDay()]}</span></td>
+                <td>{kind.label}</td>
+                <td className="num">{s.status === "present" ? "100%" : "0%"}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      {sessions.length > ROWS_SHOWN && (
+        <button type="button" className="text-button" onClick={() => setShowAll((v) => !v)}>{showAll ? "Show fewer" : `Show all ${sessions.length} classes`}</button>
       )}
     </div>
   );
