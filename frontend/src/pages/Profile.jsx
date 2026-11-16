@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router";
 import { motion, useScroll, useTransform } from "motion/react";
 import { Counter, Lines, Reveal, Tile } from "../components/motion.jsx";
 import { Icon, usePageMeta } from "../components/Shell.jsx";
-import { AverageChart, GameRow, Promotion, STATUS, Training, longDate } from "../components/MemberStats.jsx";
+import { AttendanceReport, AverageChart, GameRow, Promotion, Training } from "../components/MemberStats.jsx";
 import { useSiteData } from "../data/SiteData.jsx";
 import { memberMeta } from "../data/routes.js";
 import {
@@ -161,19 +161,10 @@ export default function Profile() {
               <p className="dim portal-sub">Average for each set of games.</p>
               <AverageChart games={portal.games} target={promotion?.average} />
             </Reveal>
-            {portal.attendance.sessions.length > 0 && (
-              <Reveal className="portal-block">
-                <h2 className="tile-title">Training attendance</h2>
-                <ul className="portal-list">
-                  {portal.attendance.sessions.slice(0, 12).map((session) => (
-                    <li key={session.id}>
-                      <div><b>{session.title}</b><small>{longDate(session.date)}{session.location ? ` · ${session.location}` : ""}</small></div>
-                      <span className={`state is-${session.status}`}>{STATUS[session.status]}</span>
-                    </li>
-                  ))}
-                </ul>
-              </Reveal>
-            )}
+            <Reveal className="portal-block">
+              <h2 className="tile-title">Attendance</h2>
+              <AttendanceReport attendance={portal.attendance} schedule={data.schedule} />
+            </Reveal>
           </>
         )}
         {member.bio && <Reveal className="profile-block"><h2 className="tile-title">About {words[0]}</h2><p className="dim pre">{member.bio}</p></Reveal>}

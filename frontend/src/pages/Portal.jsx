@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Link, Navigate, useNavigate, useSearchParams } from "react-router";
 import { Counter, Reveal, Tile } from "../components/motion.jsx";
-import { AverageChart, DAY_LONG, GameRow, Promotion, STATUS, Training, listOf, longDate, shortDate } from "../components/MemberStats.jsx";
+import { AttendanceReport, AverageChart, GameRow, Promotion, STATUS, Training, longDate, shortDate } from "../components/MemberStats.jsx";
 import { Icon } from "../components/Shell.jsx";
 import { memberApi, useMemberSession } from "../data/MemberSession.jsx";
 import { TEAM_COLOR, formatNumber, niceName, stats, thumbPhoto } from "../lib/team.js";
@@ -199,16 +199,7 @@ export default function Portal() {
 
         <Reveal className="portal-block">
           <h2 className="tile-title">Attendance</h2>
-          {attendance.sessions.length ? (
-            <ul className="portal-list">
-              {attendance.sessions.slice(0, 12).map((session) => (
-                <li key={session.id}>
-                  <div><b>{session.title}</b><small>{longDate(session.date)}{session.location ? ` · ${session.location}` : ""}</small></div>
-                  <span className={`state is-${session.status}`}>{STATUS[session.status]}</span>
-                </li>
-              ))}
-            </ul>
-          ) : <p className="dim">No sessions yet. Training is every {listOf((schedule.days || []).map((d) => DAY_LONG[d]))}.</p>}
+          <AttendanceReport attendance={attendance} schedule={schedule} />
         </Reveal>
       </div>
 

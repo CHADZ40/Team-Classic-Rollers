@@ -336,7 +336,7 @@ app.post("/api/admin/telegram-test", requireAdmin, async (_req,res) => {
 });
 app.get("/api/public/site-data", (_req,res) => {
   res.set("Cache-Control", "no-store");
-  res.json(publicData());
+  res.json(publicSiteData());
 });
 app.post("/api/admin/login", async (req,res) => {
   const { username, password } = req.body || {};
@@ -358,6 +358,20 @@ app.post("/api/admin/logout", (_req,res) => {
   res.json({ ok: true });
 });
 app.get("/api/admin/site-data", requireAdmin, (_req,res) => res.json(readData()));
+// Everything the public website shows, whether it reads this server or a published copy. Each
+// bowler's games and training attendance go along. Never check-in photos, faces or how a match
+// was made. Uses things defined further down, so it's only called once the server is running.
+function publicSiteData() {
+  const data = publicData(); const logs = readLogs();
+  data.history = Object.fromEntries(data.members.map(m => [m.id, scoreHistory(logs, m.id).slice(0, 50)]));
+  data.portal = Object.fromEntries(data.members.map(m => {
+    const attendance = memberAttendance(m.id);
+    return [m.id, { games: memberGames(m.id).slice(0, 50), attendance: { ...attendance, sessions: attendance.sessions.slice(0, 60) } }];
+  }));
+  data.schedule = { days: TRAINING_DAYS };
+  data.promotion = PROMOTION;
+  return data;
+}
 function readLogs() { return fs.existsSync(LOG_FILE) ? JSON.parse(fs.readFileSync(LOG_FILE,"utf8")) : []; }
 function scoreHistory(logs, id) {
   return logs.filter(l => String(l.memberId) === String(id) && HISTORY_ACTIONS.includes(l.action)).map(l=>({timestamp:l.timestamp,action:l.action,previousScores:l.previousValue ?? l.previousScores,newScores:l.newValue ?? l.newScores ?? l.scores,amount:l.amount ?? l.scoresAdded,gamesAdded:l.gamesAdded,reason:l.reason||l.details||""}));
@@ -636,7 +650,9 @@ function memberAttendance(memberId) {
     .map(t => { const row = rows.get(t.id); return { id: t.id, title: t.title, date: t.date, location: t.location || '', status: row ? row.status : t.open === true ? 'open' : 'missed' }; })
     .filter(t => t.status === 'open' || (firstDate && String(t.date) >= firstDate));
   const counted = list.filter(t => t.status !== 'open');
-  return { present: counted.filter(t => t.status === 'present').length, total: counted.length, sessions: list.slice(0, 100) };
+  const count = (status) => counted.filter(t => t.status === status).length;
+  // "missed" means no record at all; "absent" means an admin marked them absent.
+  return { present: count('present'), absent: count('absent'), missed: count('missed'), total: counted.length, sessions: list.slice(0, 100) };
 }
 // A member's games from the activity log, newest first. When an admin adds games and pins
 // for the same visit, the two log entries become one line.
@@ -681,20 +697,7 @@ const attendance = registerAttendance(app, { requireAdmin, readList, writeList, 
 const publisher = process.env.PUBLISH_TO_GIT === '1' ? createPublisher({
   repoDir: process.env.PUBLISH_REPO_DIR || path.join(__dirname, '..'),
   uploadDir: UPLOAD_DIR,
-  buildData: () => {
-    const data = publicData(); const logs = readLogs();
-    data.history = Object.fromEntries(data.members.map(m => [m.id, scoreHistory(logs, m.id).slice(0, 50)]));
-    // Each bowler's public page: games for the chart, and training attendance. Never check-in
-    // photos, faces or how a match was made.
-    data.portal = Object.fromEntries(data.members.map(m => {
-      const attendance = memberAttendance(m.id);
-      return [m.id, { games: memberGames(m.id).slice(0, 50), attendance: { ...attendance, sessions: attendance.sessions.slice(0, 30) } }];
-    }));
-    data.schedule = { days: TRAINING_DAYS };
-    data.promotion = PROMOTION;
-    data.publishedAt = new Date().toISOString();
-    return data;
-  },
+  buildData: () => ({ ...publicSiteData(), publishedAt: new Date().toISOString() }),
 }) : null;
 if (publisher) onPublicChange = publisher.schedule;
 app.get('/api/admin/publish', requireAdmin, (_req,res) => { res.set('Cache-Control','no-store'); res.json(publisher ? { enabled: true, ...publisher.state } : { enabled: false }); });
