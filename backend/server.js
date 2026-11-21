@@ -8,6 +8,7 @@ const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
 const { registerAttendance, FRAME_ROUTES } = require("./attendance");
+const { registerTournaments } = require("./tournaments");
 const { createPublisher } = require("./publish");
 const { createInbox } = require("./score-inbox");
 
@@ -576,7 +577,8 @@ const MEMBER_FILES = {
  changes: path.join(MEMBER_DIR, 'member-profile-changes.json'),
  audit: path.join(MEMBER_DIR, 'member-audit-log.json'),
  events: path.join(MEMBER_DIR, 'score-request-events.json'),
- browserTickets: path.join(MEMBER_DIR, 'browser-login-tickets.json')
+ browserTickets: path.join(MEMBER_DIR, 'browser-login-tickets.json'),
+ tournaments: path.join(MEMBER_DIR, 'tournaments.json')
 };
 function readList(key) { try { const v=JSON.parse(fs.readFileSync(MEMBER_FILES[key],'utf8')); return Array.isArray(v)?v:[]; } catch(e) { if(e.code==='ENOENT') return []; throw e; } }
 function writeList(key, list) { const f=MEMBER_FILES[key], tmp=f+'.tmp'; fs.mkdirSync(path.dirname(f),{recursive:true}); fs.writeFileSync(tmp,JSON.stringify(list,null,2),{mode:0o600}); fs.renameSync(tmp,f); if (key === 'attendance' || key === 'training') onPublicChange(); }
@@ -693,6 +695,7 @@ app.post('/api/member/score-requests',memberAuth,upload.array('proofs',6),(req,r
 app.get('/api/member/score-requests',memberAuth,(req,res)=>res.json({requests:readRequests().filter(r=>String(r.memberId)===String(req.memberAccount.memberId)).map(r=>({id:r.id,games:r.games,scores:r.scores,status:r.status,createdAt:r.createdAt,reviewedAt:r.reviewedAt,reviewReason:r.reviewReason}))}));
 app.post('/api/admin/member-notifications',requireAdmin,(req,res)=>{const memberId=String(req.body.memberId||'');const title=String(req.body.title||'').trim().slice(0,120),message=String(req.body.message||'').trim().slice(0,2000);if(!title||!message)return res.status(400).json({error:'Title and message are required.'});const targets=memberId?readList('accounts').filter(a=>String(a.memberId)===memberId):readList('accounts');const rows=targets.map(a=>({id:crypto.randomUUID(),memberId:a.memberId,telegramId:a.telegramId,title,message,createdAt:new Date().toISOString(),read:false}));writeList('notifications',[...rows,...readList('notifications')].slice(0,5000));writeAuditLog('member_notification_created',{memberId:memberId||'all',count:rows.length,title});res.json({ok:true,count:rows.length});});
 const attendance = registerAttendance(app, { requireAdmin, readList, writeList, readData, writeAuditLog, adminUser: ADMIN_USER, photoDir: path.join(MEMBER_DIR, 'checkin-photos') });
+registerTournaments(app, { requireAdmin, readList, writeList, readData, writeAuditLog });
 // Laptop mode: scripts/start-admin.sh turns this on. Every public change is pushed to GitHub,
 // and Vercel rebuilds the website. Score history goes along, since there's no server to ask.
 const publisher = process.env.PUBLISH_TO_GIT === '1' ? createPublisher({

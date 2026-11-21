@@ -73,6 +73,7 @@ export const ACTION_LABELS = {
   member_added: "Player added", member_removed: "Player removed", member_updated: "Player updated", introduction_added: "Leader added", introduction_updated: "Leader updated", introduction_removed: "Leader removed", introductions_reordered: "Leaders reordered", website_content_updated: "Website text updated",
   member_notification_created: "Message sent to members", training_session_created: "Session opened", training_session_opened: "Session reopened", training_session_closed: "Session closed", training_session_deleted: "Session deleted",
   training_attendance_recorded: "Attendance marked", training_attendance_undone: "Attendance undone", face_registered: "Face registered", face_removed: "Face data deleted",
+  tournament_created: "Tournament created", tournament_updated: "Tournament saved", tournament_deleted: "Tournament deleted",
   news_published: "News published", news_updated: "News updated", news_deleted: "News deleted",
 };
 export const actionLabel = (action) => ACTION_LABELS[action] || String(action || "").replaceAll("_", " ");

@@ -17,6 +17,7 @@ const Requests = lazy(() => import("./pages/Requests.jsx"));
 const Players = lazy(() => import("./pages/Players.jsx"));
 const Introductions = lazy(() => import("./pages/Introductions.jsx"));
 const Attendance = lazy(() => import("./pages/Attendance.jsx"));
+const Tournament = lazy(() => import("./pages/Tournament.jsx"));
 const News = lazy(() => import("./pages/News.jsx"));
 const Content = lazy(() => import("./pages/Content.jsx"));
 const Accounts = lazy(() => import("./pages/Accounts.jsx"));
@@ -51,6 +52,7 @@ const router = createBrowserRouter([
           { path: "/players", element: page(Players) },
           { path: "/introductions", element: page(Introductions) },
           { path: "/attendance", element: page(Attendance) },
+          { path: "/tournament", element: page(Tournament) },
           { path: "/news", element: page(News) },
           { path: "/content", element: page(Content) },
           { path: "/member-accounts", element: page(Accounts) },
